@@ -12,7 +12,7 @@ from backend.ner import extract_entities
 from backend.rules import flag_clause
 from backend.classifier import predict_clause_type
 from backend.similarity import find_similar_risky_clause
-from backend.analyzer import analyze_clause, generate_contract_summary
+from backend.analyzer import analyze_contract_batch
 from backend.scorer import calculate_risk_score, count_risk_levels, get_risk_label
 
 app = FastAPI(title="ClauseGuard API")
@@ -29,7 +29,7 @@ UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
-@app.get("/")
+@app.get("/health")
 def health_check():
     """Simple endpoint to check the server is alive"""
     return {"status": "ClauseGuard API is running"}
@@ -63,23 +63,22 @@ async def analyze_contract(file: UploadFile = File(...)):
         # Step 4: entities (whole-contract level)
         entities = extract_entities(cleaned)
 
-        # Step 5-8: per-clause analysis
-        clause_results = []
+        # Step 5-8: compile clauses and analyze in a single batch
+        processed_clauses = []
         for clause in clauses:
-            rule_matches = flag_clause(clause)
-            classification = predict_clause_type(clause)
-            similarity_match = find_similar_risky_clause(clause)
+            processed_clauses.append({
+                "text": clause,
+                "classification": predict_clause_type(clause),
+                "rule_matches": flag_clause(clause),
+                "similarity_match": find_similar_risky_clause(clause)
+            })
 
-            analysis = analyze_clause(clause, rule_matches, classification, similarity_match)
-            analysis["clause_text"] = clause
-            analysis["clause_type_predicted"] = classification["clause_type"]
-            clause_results.append(analysis)
+        clause_results, summary = analyze_contract_batch(processed_clauses)
 
         # Step 9: scoring
         score = calculate_risk_score(clause_results)
         counts = count_risk_levels(clause_results)
         label = get_risk_label(score)
-        summary = generate_contract_summary(clause_results)
 
         return {
             "file_name": file.filename,
@@ -96,3 +95,17 @@ async def analyze_contract(file: UploadFile = File(...)):
         # Clean up — delete the uploaded file after processing
         if os.path.exists(file_path):
             os.remove(file_path)
+
+
+# Serve frontend static files
+app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")
+
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)

@@ -16,5 +16,5 @@ for i, result in enumerate(results, 1):
         match = result["similarity_match"]
         print(f"\n--- Clause {i} ---")
         print(result["clause_text"][:150], "...")
-        print(f"  🔍 Matched: {match['risk_type']} (similarity: {match['similarity_score']})")
+        print(f"  [MATCH] Matched: {match['risk_type']} (similarity: {match['similarity_score']})")
         print(f"     Reference: \"{match['matched_reference']}\"")

@@ -16,4 +16,4 @@ for i, result in enumerate(flagged, 1):
         print(f"\n--- Clause {i} ---")
         print(result["clause_text"][:150], "...")
         for match in result["matches"]:
-            print(f"  ⚠️ {match['risk_type']} ({match['risk_level']}): {match['explanation']}")
+            print(f"  [WARNING] {match['risk_type']} ({match['risk_level']}): {match['explanation']}")

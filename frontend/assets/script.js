@@ -132,8 +132,13 @@ document.addEventListener('DOMContentLoaded', () => {
             btnText.textContent = loadingMessages[msgIndex];
         }, 1200);
 
+        let apiBase = "";
+        if (window.location.protocol === 'file:') {
+            apiBase = "http://127.0.0.1:8000";
+        }
+
         try {
-            const response = await fetch("http://127.0.0.1:8000/analyze", {
+            const response = await fetch(`${apiBase}/analyze`, {
                 method: "POST",
                 body: formData
             });
@@ -143,11 +148,22 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const data = await response.json();
-            sessionStorage.setItem("riskReport", JSON.stringify(data));
+            console.log("ClauseGuard: Analysis response received", data);
+            try {
+                localStorage.setItem("riskReport", JSON.stringify(data));
+            } catch (e) {
+                console.warn("ClauseGuard: Failed to write to localStorage", e);
+            }
+            try {
+                sessionStorage.setItem("riskReport", JSON.stringify(data));
+            } catch (e) {
+                console.warn("ClauseGuard: Failed to write to sessionStorage", e);
+            }
+            clearInterval(messageInterval);
             window.location.href = "report.html";
         } catch (err) {
             console.error(err);
-            alert("Analysis failed. Make sure the backend server is running on port 8000.");
+            alert("Analysis failed. Make sure the backend server is running.");
             clearInterval(messageInterval);
             analyzeSpinner.style.display = 'none';
             btnText.textContent = "Analyze";

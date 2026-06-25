@@ -154,7 +154,10 @@ function buildClausesHTML(clauses) {
 
         html += `
             <div class="clause-card-wrapper">
-                <div class="clause-card-title">${riskType}</div>
+                <div class="clause-card-title">
+                    ${riskType}
+                    <span class="risk-badge badge-${riskLevel.toLowerCase()}">${riskLevel.toUpperCase()}</span>
+                </div>
                 ${metaLine ? `<div class="clause-card-meta">${metaLine}</div>` : ''}
                 <div class="clause-card-grid">
                     <div class="clause-quote-box">"${quoteText}"</div>
@@ -182,9 +185,26 @@ function buildSummaryHTML(summary) {
 /* ---- Main Render Function ---- */
 function render() {
     const root = document.getElementById("report-root");
-    if (!root) return;
+    if (!root) {
+        console.error("ClauseGuard: #report-root element not found");
+        return;
+    }
 
-    const raw = sessionStorage.getItem("riskReport");
+    let raw = null;
+    try {
+        raw = sessionStorage.getItem("riskReport");
+    } catch (e) {
+        console.warn("ClauseGuard: Failed to read from sessionStorage", e);
+    }
+    if (!raw) {
+        try {
+            raw = localStorage.getItem("riskReport");
+        } catch (e) {
+            console.warn("ClauseGuard: Failed to read from localStorage", e);
+        }
+    }
+    console.log("ClauseGuard: riskReport data source =", raw ? "Found" : "Null/Empty");
+
     if (!raw) {
         root.innerHTML = `
             <div style="text-align:center;padding:80px 24px;color:#888;">
@@ -196,86 +216,123 @@ function render() {
         return;
     }
 
-    const data = JSON.parse(raw);
-
-    // Pre-build all tab content
-    const clausesContent = buildClausesHTML(data.clauses);
-    const nerContent = buildNERHTML(data.entities);
-    const classificationContent = buildClassificationHTML(data.clauses);
-    const summaryContent = buildSummaryHTML(data.summary);
-
-    let html = buildBannerHTML(data);
-
-    html += `
-        <div class="dashboard-frame">
-            <div class="tab-sidebar-list">
-                <button class="vertical-tab-item active" data-tab="tab-clauses">Flagged Clauses</button>
-                <button class="vertical-tab-item" data-tab="tab-ner">NER</button>
-                <button class="vertical-tab-item" data-tab="tab-classification">Classification</button>
-                <button class="vertical-tab-item" data-tab="tab-summary">Summary</button>
+    let data;
+    try {
+        data = JSON.parse(raw);
+    } catch (e) {
+        console.error("ClauseGuard: Failed to parse riskReport JSON", e);
+        root.innerHTML = `
+            <div style="text-align:center;padding:80px 24px;color:#c0392b;">
+                <h2>Error loading report</h2>
+                <p>The analysis data could not be parsed.</p>
+                <a href="index.html" style="color:#10757d;font-weight:600;text-decoration:none;border-bottom:1.5px solid #10757d;padding-bottom:1px;margin-top:16px;display:inline-block;">← Try again</a>
             </div>
-            <div class="dashboard-content-panel">
-                <div class="panel-section active" id="tab-clauses">
-                    <div class="panel-header-row">
-                        <div class="panel-header-title">Flagged Clauses</div>
-                    </div>
-                    ${clausesContent}
-                </div>
-                <div class="panel-section" id="tab-ner">
-                    <div class="panel-header-row">
-                        <div class="panel-header-title">Named Entity Recognition</div>
-                    </div>
-                    ${nerContent}
-                </div>
-                <div class="panel-section" id="tab-classification">
-                    <div class="panel-header-row">
-                        <div class="panel-header-title">Clause Classification</div>
-                    </div>
-                    ${classificationContent}
-                </div>
-                <div class="panel-section" id="tab-summary">
-                    <div class="panel-header-row">
-                        <div class="panel-header-title">Executive Summary</div>
-                    </div>
-                    ${summaryContent}
-                </div>
-            </div>
-        </div>
-    `;
+        `;
+        return;
+    }
 
-    root.innerHTML = html;
-
-    // ---- Animate the gauge on load ----
-    setTimeout(() => {
-        const score = data.risk_score || 0;
-        const halfCircumference = Math.PI * 40;
-        const fillLength = (score / 100) * halfCircumference;
-        const dashOffset = halfCircumference - fillLength;
-
-        const fillPath = document.getElementById("gauge-fill-path");
-        if (fillPath) {
-            fillPath.style.strokeDashoffset = dashOffset;
-        }
-    }, 150);
-
-    // ---- Wire up vertical tab switching ----
-    const tabButtons = document.querySelectorAll('.vertical-tab-item');
-    const tabPanels = document.querySelectorAll('.panel-section');
-
-    tabButtons.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const targetId = btn.getAttribute('data-tab');
-
-            tabButtons.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-
-            tabPanels.forEach(p => p.classList.remove('active'));
-            const target = document.getElementById(targetId);
-            if (target) target.classList.add('active');
-        });
+    console.log("ClauseGuard: Parsed data", { 
+        file_name: data.file_name, 
+        risk_score: data.risk_score, 
+        total_clauses: data.total_clauses,
+        clauses_count: data.clauses ? data.clauses.length : 0,
+        has_entities: !!data.entities,
+        has_summary: !!data.summary
     });
+
+    try {
+        // Pre-build all tab content
+        const clausesContent = buildClausesHTML(data.clauses);
+        const nerContent = buildNERHTML(data.entities);
+        const classificationContent = buildClassificationHTML(data.clauses);
+        const summaryContent = buildSummaryHTML(data.summary);
+
+        let html = buildBannerHTML(data);
+
+        html += `
+            <div class="dashboard-frame">
+                <div class="tab-sidebar-list">
+                    <button class="vertical-tab-item active" data-tab="tab-clauses">Flagged Clauses</button>
+                    <button class="vertical-tab-item" data-tab="tab-ner">NER</button>
+                    <button class="vertical-tab-item" data-tab="tab-classification">Classification</button>
+                    <button class="vertical-tab-item" data-tab="tab-summary">Summary</button>
+                </div>
+                <div class="dashboard-content-panel">
+                    <div class="panel-section active" id="tab-clauses">
+                        <div class="panel-header-row">
+                            <div class="panel-header-title">Flagged Clauses</div>
+                        </div>
+                        ${clausesContent}
+                    </div>
+                    <div class="panel-section" id="tab-ner">
+                        <div class="panel-header-row">
+                            <div class="panel-header-title">Named Entity Recognition</div>
+                        </div>
+                        ${nerContent}
+                    </div>
+                    <div class="panel-section" id="tab-classification">
+                        <div class="panel-header-row">
+                            <div class="panel-header-title">Clause Classification</div>
+                        </div>
+                        ${classificationContent}
+                    </div>
+                    <div class="panel-section" id="tab-summary">
+                        <div class="panel-header-row">
+                            <div class="panel-header-title">Executive Summary</div>
+                        </div>
+                        ${summaryContent}
+                    </div>
+                </div>
+            </div>
+        `;
+
+        root.innerHTML = html;
+        console.log("ClauseGuard: Report HTML injected successfully");
+
+        // ---- Animate the gauge on load ----
+        setTimeout(() => {
+            const score = data.risk_score || 0;
+            const halfCircumference = Math.PI * 40;
+            const fillLength = (score / 100) * halfCircumference;
+            const dashOffset = halfCircumference - fillLength;
+
+            const fillPath = document.getElementById("gauge-fill-path");
+            if (fillPath) {
+                fillPath.style.strokeDashoffset = dashOffset;
+            }
+        }, 150);
+
+        // ---- Wire up vertical tab switching ----
+        const tabButtons = document.querySelectorAll('.vertical-tab-item');
+        const tabPanels = document.querySelectorAll('.panel-section');
+
+        tabButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const targetId = btn.getAttribute('data-tab');
+
+                tabButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                tabPanels.forEach(p => p.classList.remove('active'));
+                const target = document.getElementById(targetId);
+                if (target) target.classList.add('active');
+            });
+        });
+
+    } catch (renderError) {
+        console.error("ClauseGuard: Error rendering report", renderError);
+        root.innerHTML = `
+            <div style="text-align:center;padding:80px 24px;color:#c0392b;">
+                <h2>Rendering Error</h2>
+                <p>${renderError.message}</p>
+                <a href="index.html" style="color:#10757d;font-weight:600;text-decoration:none;border-bottom:1.5px solid #10757d;padding-bottom:1px;margin-top:16px;display:inline-block;">← Try again</a>
+            </div>
+        `;
+    }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", render);
+} else {
     render();
-});
+}

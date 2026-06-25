@@ -1,8 +1,36 @@
-pandas
-numpy
-scikit-learn
-sentence-transformers
-torch
-PyPDF2
+# ClauseGuard — Python Dependencies
+# Install with: pip install -r requirements.txt
+# Then run: python -m spacy download en_core_web_sm
+
+# ── Web Framework ──────────────────────────────────────────────────────────────
 fastapi
-uvicorn
+uvicorn[standard]
+python-multipart          # required for FastAPI file uploads
+
+# ── Environment & Config ───────────────────────────────────────────────────────
+python-dotenv
+
+# ── File Parsing ───────────────────────────────────────────────────────────────
+pdfplumber                # PDF text extraction
+python-docx               # DOCX text extraction
+
+# ── Classic NLP ────────────────────────────────────────────────────────────────
+spacy                     # NER + sentence boundary detection (run: python -m spacy download en_core_web_sm)
+yake                      # Single-document keyword extraction
+
+# ── ML / Vectorization ────────────────────────────────────────────────────────
+scikit-learn              # TF-IDF vectorizer + Logistic Regression classifier
+pandas                    # CSV loading for training data
+numpy                     # Array operations
+joblib                    # Model serialization
+
+# ── Semantic Embeddings ───────────────────────────────────────────────────────
+sentence-transformers     # all-MiniLM-L6-v2 semantic similarity
+torch                     # Required backend for sentence-transformers
+
+# ── Google Gemini LLM ─────────────────────────────────────────────────────────
+google-genai              # Modern Gemini SDK (replaces google-generativeai)
+pydantic                  # Structured JSON schema for Gemini responses
+
+# ── Testing ───────────────────────────────────────────────────────────────────
+pytest

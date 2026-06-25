@@ -13,7 +13,8 @@ def fix_broken_lines(text):
     PDFs often break a sentence across lines like:
     "The vendor shall not be liable for any
     damages arising from this agreement."
-    We join lines that don't end with punctuation.
+    We join lines that don't end with punctuation, but we avoid merging
+    structural elements (headers, bold labels, bullet points).
     """
     lines = text.split('\n')
     fixed_lines = []
@@ -22,16 +23,53 @@ def fix_broken_lines(text):
     for line in lines:
         line = line.strip()
         if not line:
-            fixed_lines.append(buffer)
-            buffer = ""
+            if buffer:
+                fixed_lines.append(buffer)
+                buffer = ""
             continue
 
-        buffer += (" " + line if buffer else line)
+        is_new_block = False
+        if not buffer:
+            is_new_block = True
+        else:
+            # Check for structural markdown/bullet elements starting the new line
+            if (line.startswith('#') or 
+                line.startswith('**') or 
+                line.startswith('-') or 
+                line.startswith('*') or 
+                re.match(r'^\d+\.', line) or 
+                re.match(r'^[A-Za-z]\)\s+', line)):
+                is_new_block = True
+            # Check if buffer ends with sentence-ending punctuation
+            elif buffer.endswith(('.', ':', ';', '?', '!')):
+                is_new_block = True
+            else:
+                # Decide based on continuation indicators
+                last_word = buffer.split()[-1].lower() if buffer.split() else ""
+                last_word_clean = re.sub(r'[^a-z0-9]', '', last_word)
+                continuation_words = {
+                    "and", "or", "the", "a", "an", "of", "to", "for", "with", "in", "on", 
+                    "at", "by", "from", "any", "this", "shall", "be", "is", "are", "that", 
+                    "which", "would", "should", "could", "may", "been", "have", "has", "had",
+                    "not", "neither", "either", "such", "under", "between", "specifically"
+                }
+                
+                # Join if the current line starts with lowercase or digit/symbol (non-uppercase)
+                if not line[0].isupper():
+                    is_new_block = False
+                # Join if the previous line ended with a continuation word
+                elif last_word_clean in continuation_words:
+                    is_new_block = False
+                # Otherwise, it starts a new block (e.g. capitalized new item/heading)
+                else:
+                    is_new_block = True
 
-        # If line ends with sentence-ending punctuation, close the buffer
-        if line.endswith(('.', ':', ';')):
-            fixed_lines.append(buffer)
-            buffer = ""
+        if is_new_block:
+            if buffer:
+                fixed_lines.append(buffer)
+            buffer = line
+        else:
+            buffer += " " + line
 
     if buffer:
         fixed_lines.append(buffer)

@@ -106,9 +106,24 @@ main {
     flex: 1;
     display: flex;
     flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    padding: 48px 24px 80px;
+    width: 100%;
+}
+
+/* Hidden file input */
+#file-input {
+    display: none;
+}
+
+/* Center the uploader card vertically on index page */
+.uploader-center-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 48px 24px 80px;
     width: 100%;
 }
 
@@ -311,7 +326,8 @@ textarea::placeholder {
     width: 100%;
     max-width: 1000px;
     margin: 0 auto;
-    padding: 24px 0 80px;
+    padding: 0 0 80px;
+    align-self: center;
 }
 
 /* Peach Banner Header */
