@@ -1,0 +1,94 @@
+text,label
+"This Agreement shall automatically renew for successive one-year terms unless either party provides written notice of non-renewal at least 90 days prior to the end of the then-current term.",termination
+"Either party may terminate this Agreement upon 30 days written notice to the other party.",termination
+"The Company may terminate this Agreement immediately if Contractor breaches any material term.",termination
+"This Agreement may be terminated by mutual written consent of both parties at any time.",termination
+"Client may terminate this Agreement for convenience upon 60 days prior written notice.",termination
+"Either party may terminate immediately upon the other party's insolvency or filing for bankruptcy.",termination
+"Upon termination of this Agreement, all licenses granted herein shall immediately cease.",termination
+"This Agreement shall terminate automatically upon completion of the services described in Exhibit A.",termination
+"The Company reserves the right to terminate this Agreement at its sole discretion at any time without cause.",termination
+"In the event of termination, Contractor shall return all Company property within 10 business days.",termination
+"Failure to cure a material breach within 15 days of written notice shall result in automatic termination.",termination
+"This Agreement may be terminated by either party with 90 days advance written notice for any reason.",termination
+"Client shall pay Vendor within 30 days of receipt of invoice.",payment
+"All payments are due net 15 from the invoice date and late payments incur a 2% monthly fee.",payment
+"Contractor shall invoice Client on a monthly basis for services rendered during the prior month.",payment
+"Payment shall be made in full prior to commencement of services.",payment
+"Client agrees to pay a non-refundable deposit of 25% upon execution of this Agreement.",payment
+"All fees are exclusive of applicable taxes, which shall be borne by Client.",payment
+"Late payments shall accrue interest at a rate of 1.5% per month until paid in full.",payment
+"Vendor shall be reimbursed for reasonable travel expenses pre-approved in writing by Client.",payment
+"Payments shall be made via wire transfer to the account specified in Exhibit B.",payment
+"In the event of disputed charges, Client must notify Vendor in writing within 10 days of invoice receipt.",payment
+"Compensation shall be paid bi-weekly via direct deposit to Employee's designated bank account.",payment
+"Vendor shall not be liable for any indirect, incidental, or consequential damages arising from this Agreement.",liability
+"In no event shall either party's liability exceed the total fees paid under this Agreement.",liability
+"Company disclaims all liability for damages resulting from misuse of the product.",liability
+"Neither party shall be liable for any loss of profits, data, or business opportunities arising from this Agreement.",liability
+"Contractor's total liability under this Agreement shall not exceed the amount paid in the preceding 12 months.",liability
+"The Service Provider shall not be responsible for any damages caused by third-party software integrations.",liability
+"Each party's aggregate liability arising out of this Agreement shall be capped at $50,000.",liability
+"Vendor assumes no liability for delays caused by circumstances beyond its reasonable control.",liability
+"In no event shall the Company be liable for any indirect or punitive damages whatsoever.",liability
+"Each party agrees to keep confidential all proprietary information disclosed by the other party.",confidentiality
+"The receiving party shall not disclose any confidential information to third parties without prior written consent.",confidentiality
+"Confidential Information shall not include information that is publicly available through no fault of the receiving party.",confidentiality
+"Both parties agree to maintain strict confidentiality regarding the terms of this Agreement.",confidentiality
+"Employee shall not disclose trade secrets or proprietary business information during or after employment.",confidentiality
+"All confidential information exchanged shall be marked as such and protected for a period of five years.",confidentiality
+"Recipient agrees to use the same degree of care to protect Confidential Information as it uses for its own similar information.",confidentiality
+"This confidentiality obligation shall survive termination of this Agreement for a period of three years.",confidentiality
+"Contractor shall not use Client's confidential information for any purpose other than performing the services.",confidentiality
+"All work product, inventions, and intellectual property created under this Agreement shall be the sole property of the Client.",ip
+"Contractor retains ownership of any pre-existing intellectual property used in performance of this Agreement.",ip
+"All deliverables, including source code and documentation, shall become the exclusive property of the Company upon payment.",ip
+"Contractor hereby assigns all right, title, and interest in any work product to the Client.",ip
+"Each party retains ownership of its respective pre-existing intellectual property.",ip
+"Any improvements or derivative works created during the engagement shall belong solely to Client.",ip
+"Vendor grants Client a non-exclusive, royalty-free license to use the licensed materials.",ip
+"Company shall own all rights, title, and interest in any inventions conceived during the term of employment.",ip
+"Contractor agrees not to engage in any business that competes with the Company for a period of 12 months following termination.",noncompete
+"Contractor agrees not to solicit Company's clients or employees for 6 months after this Agreement ends.",noncompete
+"Employee shall not work for a direct competitor within a 50-mile radius for one year after leaving the Company.",noncompete
+"During the term of employment and for 18 months thereafter, Employee shall not engage in any competing business.",noncompete
+"Contractor shall not, directly or indirectly, recruit or hire any employee of Client during the term of this Agreement.",noncompete
+"This non-compete restriction applies only within the geographic territory specified in Exhibit C.",noncompete
+"Employee agrees not to solicit any customer of the Company for a period of two years post-termination.",noncompete
+"This Agreement shall be governed by the laws of the State of California.",governing_law
+"Any disputes arising under this Agreement shall be resolved through binding arbitration in New York.",governing_law
+"This Agreement shall be construed in accordance with the laws of England and Wales.",governing_law
+"The parties agree to submit to the exclusive jurisdiction of the courts located in Delaware.",governing_law
+"Any controversy arising out of this Agreement shall be settled by arbitration administered by the AAA.",governing_law
+"This Agreement is governed by the Federal Arbitration Act and the laws of the State of Texas.",governing_law
+"The prevailing party in any dispute shall be entitled to recover reasonable attorneys' fees and costs.",governing_law
+"Venue for any legal proceedings shall be exclusively in the courts of Cook County, Illinois.",governing_law
+"Contractor shall indemnify and hold harmless Client from any claims arising out of Contractor's negligence.",indemnification
+"Each party agrees to indemnify the other against any third-party claims resulting from a breach of this Agreement.",indemnification
+"Company shall defend, indemnify, and hold harmless Vendor from any claims related to misuse of the product.",indemnification
+"Employee agrees to indemnify the Company for any losses resulting from unauthorized disclosure of confidential information.",indemnification
+"Client shall indemnify Contractor against any claims arising from Client-provided materials or instructions.",indemnification
+"This indemnification obligation shall survive the termination or expiration of this Agreement.",indemnification
+"Each party shall indemnify the other for any intellectual property infringement claims arising from its own materials.",indemnification
+"Vendor warrants that the services will be performed in a professional and workmanlike manner.",warranty
+"Company makes no warranties, express or implied, regarding the merchantability of the product.",warranty
+"Contractor warrants that the deliverables will be free from material defects for a period of 90 days.",warranty
+"Vendor represents and warrants that it has the full right and authority to enter into this Agreement.",warranty
+"Except as expressly stated herein, the product is provided on an as-is basis without warranty of any kind.",warranty
+"Each party warrants that it will comply with all applicable laws and regulations in performing its obligations.",warranty
+"Seller warrants that the goods are free from defects in materials and workmanship for one year from delivery.",warranty
+"Neither party shall be liable for failure to perform due to causes beyond its reasonable control, including natural disasters.",force_majeure
+"Force majeure events including natural disasters shall excuse either party from performance obligations.",force_majeure
+"Performance under this Agreement shall be suspended during any period affected by acts of God, war, or governmental action.",force_majeure
+"Neither party shall be in breach of this Agreement if delay is caused by fire, flood, or other force majeure event.",force_majeure
+"In the event of a pandemic or government-imposed restriction, affected obligations shall be temporarily suspended.",force_majeure
+"This force majeure clause shall not excuse any obligation to make payments already due prior to the triggering event.",force_majeure
+"If a force majeure event continues for more than 90 days, either party may terminate this Agreement without penalty.",force_majeure
+"This Agreement constitutes the entire understanding between the parties and supersedes all prior agreements.",miscellaneous
+"Any amendment to this Agreement must be in writing and signed by both parties.",miscellaneous
+"If any provision of this Agreement is held invalid, the remaining provisions shall remain in full force and effect.",miscellaneous
+"This Agreement may be executed in counterparts, each of which shall be deemed an original.",miscellaneous
+"No waiver of any provision of this Agreement shall be effective unless in writing and signed by the waiving party.",miscellaneous
+"Neither party may assign this Agreement without the prior written consent of the other party.",miscellaneous
+"This Agreement shall be binding upon and inure to the benefit of the parties and their successors and assigns.",miscellaneous
+"All notices under this Agreement shall be delivered in writing to the addresses specified herein.",miscellaneous
