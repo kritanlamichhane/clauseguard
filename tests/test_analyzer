@@ -1,0 +1,48 @@
+import sys
+sys.path.append(".")
+
+from backend.extractor import extract_text
+from backend.cleaner import clean_text
+from backend.segmenter import segment_into_clauses
+from backend.rules import flag_clause
+from backend.classifier import predict_clause_type
+from backend.similarity import find_similar_risky_clause
+from backend.analyzer import analyze_clause, generate_contract_summary
+
+raw = extract_text("tests/sample_contract.pdf")
+cleaned = clean_text(raw)
+clauses = segment_into_clauses(cleaned)
+
+results = []
+
+# Only test first 5 clauses to save API calls while testing
+for clause in clauses[:5]:
+    rule_matches = flag_clause(clause)
+    classification = predict_clause_type(clause)
+    similarity_match = find_similar_risky_clause(clause)
+
+    analysis = analyze_clause(clause, rule_matches, classification, similarity_match)
+    analysis["clause_text"] = clause
+    results.append(analysis)
+
+    print(f"\n--- Clause ---")
+    print(clause[:150], "...")
+    print(f"Risk: {analysis['risk_level']} — {analysis['risk_type']}")
+    print(f"Explanation: {analysis['explanation']}")
+    print(f"Recommendation: {analysis['recommendation']}")
+
+print("\n\n=== OVERALL SUMMARY ===")
+summary = generate_contract_summary(results)
+print(summary)
+
+
+
+from backend.scorer import calculate_risk_score, count_risk_levels, get_risk_label
+
+score = calculate_risk_score(results)
+counts = count_risk_levels(results)
+label = get_risk_label(score)
+
+print(f"\n\n=== RISK SCORE ===")
+print(f"Score: {score}/100 ({label})")
+print(f"Breakdown: {counts}")
