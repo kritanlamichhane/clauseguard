@@ -42,10 +42,10 @@ async def analyze_contract(file: UploadFile = File(...)):
     and returns a structured risk report.
     """
     # Validate file type
-    allowed_extensions = [".pdf", ".docx"]
+    allowed_extensions = [".pdf", ".docx", ".txt"]
     file_ext = os.path.splitext(file.filename)[1].lower()
     if file_ext not in allowed_extensions:
-        raise HTTPException(status_code=400, detail="Only PDF and DOCX files are supported.")
+        raise HTTPException(status_code=400, detail="Only PDF, DOCX, and TXT files are supported.")
 
     # Save uploaded file with a unique name (avoid collisions)
     unique_name = f"{uuid.uuid4()}{file_ext}"

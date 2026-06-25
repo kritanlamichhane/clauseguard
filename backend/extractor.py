@@ -26,5 +26,8 @@ def extract_text(file_path):
         return extract_from_pdf(file_path)
     elif extension == ".docx":
         return extract_from_docx(file_path)
+    elif extension == ".txt":
+        with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+            return f.read().strip()
     else:
         raise ValueError(f"Unsupported file type: {extension}")
