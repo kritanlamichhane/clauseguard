@@ -24,9 +24,11 @@ pandas                    # CSV loading for training data
 numpy                     # Array operations
 joblib                    # Model serialization
 
-# ── Semantic Embeddings ───────────────────────────────────────────────────────
-sentence-transformers     # all-MiniLM-L6-v2 semantic similarity
-torch                     # Required backend for sentence-transformers
+# ── Semantic Embeddings (Optimized with ONNX Runtime) ─────────────────────────
+optimum[onnxruntime]      # ONNX model execution
+transformers              # Tokenizer and architecture loader
+torch                     # Required backend tensor library
+# sentence-transformers   # (Replaced by ONNX for faster startup/inference)
 
 # ── Google Gemini LLM ─────────────────────────────────────────────────────────
 google-genai              # Modern Gemini SDK (replaces google-generativeai)

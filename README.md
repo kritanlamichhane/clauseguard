@@ -19,7 +19,7 @@ ClauseGuard runs every clause through a multi-stage NLP pipeline — combining r
 - Smart clause segmentation — detects numbered sections and markdown headers (`## 1. Services`)
 - Rule-based risk flagging using legal-pattern regex (8 risk categories)
 - ML-based clause-type classification (Logistic Regression + TF-IDF, 11 categories)
-- Semantic similarity matching against known risky clause patterns (sentence embeddings)
+- **ONNX-optimized Semantic similarity matching** against known risky clause patterns (fast local embedding execution)
 - Optional LLM-powered final analysis via Google Gemini with graceful fallback
 - Overall weighted risk score (0–100) with breakdown by severity
 - Clean web interface — upload page + tabbed annotated risk report
@@ -45,7 +45,7 @@ rules.py         → rule-based risk flagging (8-pattern regex library)
         ↓
 classifier.py    → ML clause-type classification (TF-IDF + Logistic Regression, 93 labeled examples / 11 categories)
         ↓
-similarity.py    → semantic similarity search against known risky clauses (all-MiniLM-L6-v2 + cosine similarity)
+similarity.py    → semantic similarity search against known risky clauses (ONNX all-MiniLM-L6-v2 + cosine similarity)
         ↓
 analyzer.py      → batch risk analysis: Gemini API (with NLP fallback on quota exceeded)
         ↓
@@ -64,7 +64,7 @@ risk report (report.html)
 | Keyword extraction | `keywords.py` | TF-IDF (multi-doc), YAKE (single-doc) |
 | Rule-based classification | `rules.py` | Regex pattern matching (8 risk types) |
 | Supervised ML classification | `classifier.py` | TF-IDF vectorization + Logistic Regression |
-| Semantic similarity / embeddings | `similarity.py` | `sentence-transformers` (`all-MiniLM-L6-v2`), cosine similarity |
+| Semantic similarity / embeddings | `similarity.py` | **ONNX Runtime** (`all-MiniLM-L6-v2`), cosine similarity |
 | LLM-augmented reasoning | `analyzer.py` | Batch prompt engineering with structured context injection + Pydantic schema |
 | Risk scoring logic | `scorer.py` | Weighted aggregation by severity |
 
@@ -76,7 +76,7 @@ risk report (report.html)
 |---|---|
 | Backend | Python 3.11, FastAPI, Uvicorn |
 | Classic NLP | spaCy (`en_core_web_sm`), scikit-learn, YAKE |
-| ML / Embeddings | scikit-learn (Logistic Regression), sentence-transformers |
+| ML / Embeddings | scikit-learn (Logistic Regression), **optimum (ONNX Runtime)** |
 | LLM | Google Gemini API (`google-genai` SDK) |
 | File Parsing | pdfplumber, python-docx |
 | Frontend | Vanilla HTML, CSS, JavaScript (no framework) |
@@ -98,7 +98,7 @@ clauseguard/
 │   ├── keywords.py          # TF-IDF + YAKE keyword extraction
 │   ├── rules.py             # Regex-based risk flagging (8 patterns)
 │   ├── classifier.py        # ML clause-type classifier (train + predict)
-│   ├── similarity.py        # Semantic similarity matching (sentence-transformers)
+│   ├── similarity.py        # Semantic similarity matching (ONNX optimized)
 │   ├── analyzer.py          # Gemini batch analysis + NLP fallback
 │   ├── scorer.py            # Risk score calculation (0–100)
 │   └── models.py            # Pydantic data models
@@ -112,10 +112,11 @@ clauseguard/
 │       └── report.js        # Report rendering (gauge, tabs, clauses)
 │
 ├── data/
-│   └── training_data/
-│       ├── clauses.csv               # Labeled training data (93 examples, 11 categories)
-│       ├── clause_classifier.joblib  # Trained model (auto-generated)
-│       └── tfidf_vectorizer.joblib   # Fitted vectorizer (auto-generated)
+│   ├── training_data/
+│   │   ├── clauses.csv               # Labeled training data (93 examples, 11 categories)
+│   │   ├── clause_classifier.joblib  # Trained model (auto-generated)
+│   │   └── tfidf_vectorizer.joblib   # Fitted vectorizer (auto-generated)
+│   └── onnx_model/                   # Exported ONNX weights folder for embeddings
 │
 ├── tests/
 │   ├── sample_contract.pdf  # Sample PDF for testing
@@ -161,7 +162,15 @@ pip install -r requirements.txt
 python -m spacy download en_core_web_sm
 ```
 
-### 4. Add your Gemini API key
+### 4. Export the Embedding Model to ONNX
+
+Export the SentenceTransformer model to local ONNX format:
+
+```bash
+optimum-cli export onnx --model sentence-transformers/all-MiniLM-L6-v2 --library transformers --task feature-extraction data/onnx_model/
+```
+
+### 5. Add your Gemini API key
 
 Create a `.env` file in the project root:
 
@@ -173,7 +182,7 @@ Get a free key at [https://aistudio.google.com/app/apikey](https://aistudio.goog
 
 > **Note:** If you hit the free-tier quota limit (20 req/day), ClauseGuard automatically falls back to local NLP heuristics — the app still works, just without Gemini explanations.
 
-### 5. Run the server
+### 6. Run the server
 
 **The backend also serves the frontend — you only need one command:**
 
@@ -181,9 +190,9 @@ Get a free key at [https://aistudio.google.com/app/apikey](https://aistudio.goog
 python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
-Wait ~15–30 seconds for the ML models (spaCy, SentenceTransformer) to load on first startup.
+Startup takes ~10 seconds on first run to initialize libraries and models.
 
-### 6. Open in your browser
+### 7. Open in your browser
 
 | URL | Purpose |
 |---|---|
@@ -226,6 +235,7 @@ python tests/test_analyzer
 | `ModuleNotFoundError` | Wrong working directory | Always run from `D:\Project\clauseguard` |
 | `429 RESOURCE_EXHAUSTED` | Gemini free-tier quota hit | Fallback NLP kicks in automatically — analysis still works |
 | `No model named pytest` | pytest not installed | `pip install pytest` |
+| `AttributeError: config` | `optimum-cli` error with wrappers | Run with `--library transformers` during model export |
 | Models load slowly on first run | Downloading weights | Normal — subsequent starts are faster |
 
 ---
@@ -244,6 +254,7 @@ python tests/test_analyzer
 ✅ Core pipeline functional — extractor, cleaner, segmenter, NER, rules, classifier, similarity, scoring  
 ✅ Web interface — upload page + tabbed risk report (Flagged Clauses, NER, Classification, Summary)  
 ✅ Gemini batch analysis with graceful NLP fallback  
+✅ **ONNX-optimized sentence similarity search (fast local execution)**  
 🚧 In active development
 
 ---
