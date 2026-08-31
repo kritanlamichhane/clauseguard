@@ -13,8 +13,11 @@ frontend/node_modules/
 
 # Environment & Config
 .env
+.env.*
+*.env
 .vscode/
 .idea/
+
 
 # Uploads & Logs
 uploads/*
