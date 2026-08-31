@@ -1,15 +1,10 @@
-import sys
-sys.path.append(".")
-
-from backend.extractor import extract_text
-from backend.cleaner import clean_text
 from backend.ner import extract_entities
 
-raw = extract_text("tests/sample_contract.pdf")
-cleaned = clean_text(raw)
-entities = extract_entities(cleaned)
-
-for category, items in entities.items():
-    print(f"\n{category.upper()}:")
-    for item in items:
-        print(f"  - {item}")
+def test_extract_entities_structure():
+    text = "Agreement between ACME Corp and John Doe on January 1st, 2024 for $5,000 in California."
+    entities = extract_entities(text)
+    assert isinstance(entities, dict)
+    assert "parties" in entities
+    assert "dates" in entities
+    assert "amounts" in entities
+    assert "locations" in entities

@@ -82,9 +82,10 @@ def remove_page_numbers(text):
 
 def normalize_quotes(text):
     """Convert fancy quotes to normal quotes"""
-    text = text.replace('"', '"').replace('"', '"')
-    text = text.replace(''', "'").replace(''', "'")
+    text = text.replace("\u201c", '"').replace("\u201d", '"')
+    text = text.replace("\u2018", "'").replace("\u2019", "'")
     return text
+
 
 def clean_text(raw_text):
     """Main function — runs all cleaning steps in order"""

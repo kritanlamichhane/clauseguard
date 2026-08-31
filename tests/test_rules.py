@@ -1,19 +1,19 @@
-import sys
-sys.path.append(".")
+from backend.rules import flag_clause, flag_all_clauses
 
-from backend.extractor import extract_text
-from backend.cleaner import clean_text
-from backend.segmenter import segment_into_clauses
-from backend.rules import flag_all_clauses
+def test_flag_clause_indemnification():
+    clause = "Contractor agrees to indemnify and hold harmless the Company from any claims."
+    matches = flag_clause(clause)
+    assert len(matches) > 0
+    assert any(m["risk_type"] == "Indemnification" for m in matches)
 
-raw = extract_text("tests/sample_contract.pdf")
-cleaned = clean_text(raw)
-clauses = segment_into_clauses(cleaned)
-flagged = flag_all_clauses(clauses)
+def test_flag_clause_one_sided_liability():
+    clause = "The Company shall not be liable for any damages of any kind."
+    matches = flag_clause(clause)
+    assert len(matches) > 0
+    assert any(m["risk_type"] == "One-sided liability" for m in matches)
 
-for i, result in enumerate(flagged, 1):
-    if result["matches"]:
-        print(f"\n--- Clause {i} ---")
-        print(result["clause_text"][:150], "...")
-        for match in result["matches"]:
-            print(f"  [WARNING] {match['risk_type']} ({match['risk_level']}): {match['explanation']}")
+def test_flag_all_clauses():
+    clauses = ["Contractor disclaims all liability.", "Standard payment terms."]
+    results = flag_all_clauses(clauses)
+    assert len(results) == 2
+    assert "matches" in results[0]
