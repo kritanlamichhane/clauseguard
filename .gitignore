@@ -1,7 +1,22 @@
+# Python / Virtual Environments
 venv/
+.venv/
 __pycache__/
 *.pyc
+.pytest_cache/
+
+# Node / Frontend
+node_modules/
+dist/
+frontend/dist/
+frontend/node_modules/
+
+# Environment & Config
 .env
+.vscode/
+.idea/
+
+# Uploads & Logs
 uploads/*
 !uploads/.gitkeep
-.vscode
+*.log

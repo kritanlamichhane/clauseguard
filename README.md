@@ -14,15 +14,15 @@ ClauseGuard runs every clause through a multi-stage NLP pipeline — combining r
 ---
 
 ## Features
-- Upload PDF, DOCX, or TXT contracts — or paste raw text directly
-- Named Entity Recognition — auto-extracts parties, dates, amounts, and locations
-- Smart clause segmentation — detects numbered sections and markdown headers (`## 1. Services`)
-- Rule-based risk flagging using legal-pattern regex (8 risk categories)
-- ML-based clause-type classification (Logistic Regression + TF-IDF, 11 categories)
-- **ONNX-optimized Semantic similarity matching** against known risky clause patterns (fast local embedding execution)
-- Optional LLM-powered final analysis via Google Gemini with graceful fallback
-- Overall weighted risk score (0–100) with breakdown by severity
-- Clean web interface — upload page + tabbed annotated risk report
+- **Modern React Dashboard** — Dark mode glassmorphism UI with circular risk score gauge, interactive filters, entity tags, and slide-over inspector.
+- **Upload PDF, DOCX, or TXT contracts** — Drag & drop upload or test with built-in sample contract.
+- **Named Entity Recognition** — Auto-extracts parties, dates, amounts, and locations.
+- **Smart clause segmentation** — Detects numbered sections and markdown headers (`## 1. Services`).
+- **Rule-based risk flagging** using legal-pattern regex (8 risk categories).
+- **ML-based clause-type classification** (Logistic Regression + TF-IDF, 11 categories).
+- **ONNX-optimized Semantic similarity matching** against known risky clause patterns (fast local embedding execution).
+- **LLM-powered final analysis** via Google Gemini with graceful fallback.
+- **Overall weighted risk score (0–100)** with breakdown by severity.
 
 ---
 
@@ -51,22 +51,8 @@ analyzer.py      → batch risk analysis: Gemini API (with NLP fallback on quota
         ↓
 scorer.py        → weighted risk scoring algorithm (0–100) + severity breakdown
         ↓
-risk report (report.html)
+React Dashboard (Vite + Tailwind CSS UI)
 ```
-
-### NLP / ML Techniques Demonstrated
-
-| Concept | File | Technique |
-|---|---|---|
-| Text preprocessing | `cleaner.py` | Regex normalization, smart line joining |
-| Clause segmentation | `segmenter.py` | Markdown header regex, numbered-clause detection, spaCy sentence boundary fallback |
-| Named Entity Recognition | `ner.py` | spaCy `en_core_web_sm` pretrained NER |
-| Keyword extraction | `keywords.py` | TF-IDF (multi-doc), YAKE (single-doc) |
-| Rule-based classification | `rules.py` | Regex pattern matching (8 risk types) |
-| Supervised ML classification | `classifier.py` | TF-IDF vectorization + Logistic Regression |
-| Semantic similarity / embeddings | `similarity.py` | **ONNX Runtime** (`all-MiniLM-L6-v2`), cosine similarity |
-| LLM-augmented reasoning | `analyzer.py` | Batch prompt engineering with structured context injection + Pydantic schema |
-| Risk scoring logic | `scorer.py` | Weighted aggregation by severity |
 
 ---
 
@@ -74,13 +60,54 @@ risk report (report.html)
 
 | Layer | Technology |
 |---|---|
+| Frontend | React 18, Vite, Tailwind CSS, Lucide Icons, TypeScript |
 | Backend | Python 3.11, FastAPI, Uvicorn |
 | Classic NLP | spaCy (`en_core_web_sm`), scikit-learn, YAKE |
 | ML / Embeddings | scikit-learn (Logistic Regression), **optimum (ONNX Runtime)** |
 | LLM | Google Gemini API (`google-genai` SDK) |
 | File Parsing | pdfplumber, python-docx |
-| Frontend | Vanilla HTML, CSS, JavaScript (no framework) |
-| Environment | Conda (Python 3.11) |
+| Package Manager | `uv` (Python) / `npm` (Frontend) |
+
+---
+
+## Quick Start
+
+### 1. Backend Setup (Python)
+
+```bash
+# Create virtual environment using uv (or standard venv)
+uv venv
+
+# Activate virtual environment
+# Windows PowerShell:
+.\.venv\Scripts\activate
+
+# Install dependencies
+uv pip install -r requirements.txt
+
+# Download spaCy model
+python -m spacy download en_core_web_sm
+```
+
+### 2. Frontend Setup (React + Vite)
+
+```bash
+# Install root dependencies
+npm install
+
+# Install frontend dependencies
+cd frontend && npm install && cd ..
+```
+
+### 3. Run Development Server (Both Backend & Frontend)
+
+From the project root directory:
+
+```bash
+npm run dev
+```
+
+Open **`http://localhost:3000`** in your browser.
 
 ---
 
@@ -92,173 +119,27 @@ clauseguard/
 ├── backend/
 │   ├── main.py              # FastAPI server — serves API + frontend static files
 │   ├── extractor.py         # PDF/DOCX/TXT → raw text
-│   ├── cleaner.py           # Smart text normalization (structure-aware line joining)
-│   ├── segmenter.py         # Clause boundary detection (markdown + numbered regex)
+│   ├── cleaner.py           # Smart text normalization
+│   ├── segmenter.py         # Clause boundary detection
 │   ├── ner.py               # Named entity recognition (spaCy)
 │   ├── keywords.py          # TF-IDF + YAKE keyword extraction
-│   ├── rules.py             # Regex-based risk flagging (8 patterns)
-│   ├── classifier.py        # ML clause-type classifier (train + predict)
-│   ├── similarity.py        # Semantic similarity matching (ONNX optimized)
-│   ├── analyzer.py          # Gemini batch analysis + NLP fallback
-│   ├── scorer.py            # Risk score calculation (0–100)
-│   └── models.py            # Pydantic data models
+│   ├── rules.py             # Regex-based risk flagging
+│   ├── classifier.py        # ML clause-type classifier
+│   ├── similarity.py        # Semantic similarity search (ONNX Runtime)
+│   ├── analyzer.py          # Gemini API batch risk analysis & local fallbacks
+│   ├── scorer.py            # Weighted risk scoring algorithm (0–100)
+│   └── constants.py         # Reference risk database & regex patterns
 │
-├── frontend/
-│   ├── index.html           # Contract upload page
-│   ├── report.html          # Tabbed risk report page
-│   └── assets/
-│       ├── style.css        # Shared stylesheet
-│       ├── script.js        # Upload logic + API call
-│       └── report.js        # Report rendering (gauge, tabs, clauses)
+├── frontend/                # Vite + React 18 + Tailwind CSS SPA
+│   ├── src/
+│   │   ├── components/      # React components (RiskScoreCard, ClauseFilter, etc.)
+│   │   ├── App.tsx          # Main React application
+│   │   ├── index.css        # Tailwind tokens & glassmorphism CSS
+│   │   └── types.ts         # TypeScript API interfaces
+│   ├── package.json
+│   └── vite.config.ts
 │
-├── data/
-│   ├── training_data/
-│   │   ├── clauses.csv               # Labeled training data (93 examples, 11 categories)
-│   │   ├── clause_classifier.joblib  # Trained model (auto-generated)
-│   │   └── tfidf_vectorizer.joblib   # Fitted vectorizer (auto-generated)
-│   └── onnx_model/                   # Exported ONNX weights folder for embeddings
-│
-├── tests/
-│   ├── sample_contract.pdf  # Sample PDF for testing
-│   ├── test_extractor.py    # PDF/TXT extraction tests
-│   ├── test_cleaner.py      # Text normalization tests
-│   ├── test_segmenter.py    # Clause segmentation tests
-│   ├── test_rules.py        # Rule-based flagging tests
-│   ├── test_classifier.py   # ML classifier train + predict test
-│   ├── test_keywords.py     # TF-IDF + YAKE keyword tests
-│   ├── test_ner.py          # Named entity recognition tests
-│   ├── test_similarity.py   # Semantic similarity tests
-│   └── test_analyzer        # End-to-end batch analysis test
-│
-├── uploads/                 # Temporary file storage (auto-cleared after processing)
-├── .env                     # API keys (never commit this)
-├── .gitignore
-├── requirements.txt
+├── package.json             # Root package script for concurrent dev runner
+├── requirements.txt         # Python dependencies
 └── README.md
 ```
-
----
-
-## Getting Started
-
-### 1. Clone the repo
-
-```bash
-git clone https://github.com/yourusername/clauseguard.git
-cd clauseguard
-```
-
-### 2. Create and activate the Conda environment
-
-```bash
-conda create -n clauseguard python=3.11 -y
-conda activate clauseguard
-```
-
-### 3. Install dependencies
-
-```bash
-pip install -r requirements.txt
-python -m spacy download en_core_web_sm
-```
-
-### 4. Export the Embedding Model to ONNX
-
-Export the SentenceTransformer model to local ONNX format:
-
-```bash
-optimum-cli export onnx --model sentence-transformers/all-MiniLM-L6-v2 --library transformers --task feature-extraction data/onnx_model/
-```
-
-### 5. Add your Gemini API key
-
-Create a `.env` file in the project root:
-
-```env
-GEMINI_API_KEY=your_gemini_api_key_here
-```
-
-Get a free key at [https://aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey).
-
-> **Note:** If you hit the free-tier quota limit (20 req/day), ClauseGuard automatically falls back to local NLP heuristics — the app still works, just without Gemini explanations.
-
-### 6. Run the server
-
-**The backend also serves the frontend — you only need one command:**
-
-```bash
-python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000 --reload
-```
-
-Startup takes ~10 seconds on first run to initialize libraries and models.
-
-### 7. Open in your browser
-
-| URL | Purpose |
-|---|---|
-| `http://127.0.0.1:8000` | Main upload page |
-| `http://127.0.0.1:8000/docs` | Swagger API documentation |
-| `http://127.0.0.1:8000/health` | Health check endpoint |
-
----
-
-## Running Tests
-
-Run each pipeline stage independently from the project root:
-
-```bash
-# Activate environment first
-conda activate clauseguard
-
-# Individual tests
-python tests/test_extractor.py
-python tests/test_cleaner.py
-python tests/test_segmenter.py
-python tests/test_rules.py
-python tests/test_ner.py
-python tests/test_keywords.py
-python tests/test_similarity.py
-python tests/test_classifier.py
-
-# End-to-end pipeline test (uses Gemini)
-python tests/test_analyzer
-```
-
----
-
-## Troubleshooting
-
-| Error | Cause | Fix |
-|---|---|---|
-| `uvicorn: not recognized` | Active env not set | Run with full path or `conda activate clauseguard` first |
-| `Address already in use` on port 8000 | Old server still running | `netstat -ano \| findstr :8000` then `taskkill /PID <id> /F` |
-| `ModuleNotFoundError` | Wrong working directory | Always run from `D:\Project\clauseguard` |
-| `429 RESOURCE_EXHAUSTED` | Gemini free-tier quota hit | Fallback NLP kicks in automatically — analysis still works |
-| `No model named pytest` | pytest not installed | `pip install pytest` |
-| `AttributeError: config` | `optimum-cli` error with wrappers | Run with `--library transformers` during model export |
-| Models load slowly on first run | Downloading weights | Normal — subsequent starts are faster |
-
----
-
-## Known Limitations
-
-- The ML classifier is trained on a small demonstration dataset (93 examples across 11 categories). Production use would require hundreds of labeled examples per category for reliable accuracy.
-- Risk pattern library (`rules.py`) and reference clauses (`similarity.py`) cover common contract risks but are not exhaustive.
-- On the Gemini free tier, the daily quota (20 requests/day for `gemini-2.5-flash`) may be exceeded quickly during testing. The local NLP fallback handles this gracefully.
-- This tool provides **informational analysis only** and does not constitute legal advice. Always consult a qualified attorney for important contracts.
-
----
-
-## Status
-
-✅ Core pipeline functional — extractor, cleaner, segmenter, NER, rules, classifier, similarity, scoring  
-✅ Web interface — upload page + tabbed risk report (Flagged Clauses, NER, Classification, Summary)  
-✅ Gemini batch analysis with graceful NLP fallback  
-✅ **ONNX-optimized sentence similarity search (fast local execution)**  
-🚧 In active development
-
----
-
-## License
-
-MIT

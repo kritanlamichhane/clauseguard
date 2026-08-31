@@ -1,7 +1,5 @@
-/* ==========================================================================
-   ClauseGuard Report Renderer
-   Corporate Light Theme — Vertical Tabs, SVG Gauge, 2-Column Clauses
-   ========================================================================== */
+/* 
+   ClauseGuard Report Renderer - Vertical Tabs, SVG Gauge, 2-Column Clauses */
 
 function escapeHtml(text) {
     if (!text) return "";
