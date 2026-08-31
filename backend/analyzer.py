@@ -108,7 +108,7 @@ Also, write a 2-3 sentence overall plain-English summary of the contract's risks
             raise RuntimeError("Gemini SDK client unavailable or GEMINI_API_KEY missing.")
 
         response = client.models.generate_content(
-            model='gemini-2.5-flash',
+            model='gemini-2.0-flash',
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
@@ -116,6 +116,7 @@ Also, write a 2-3 sentence overall plain-English summary of the contract's risks
                 temperature=0.1,
             ),
         )
+
 
         
         # Parse the JSON response

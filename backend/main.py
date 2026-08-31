@@ -58,8 +58,16 @@ async def analyze_contract(file: UploadFile = File(...)):
     try:
         # Step 1-3: extract, clean, segment
         raw_text = extract_text(file_path)
+        if not raw_text or not raw_text.strip():
+            raise HTTPException(
+                status_code=400,
+                detail="Could not extract text from document. Please ensure the file is not empty or password protected."
+            )
+
         cleaned = clean_text(raw_text)
         clauses = segment_into_clauses(cleaned)
+        if not clauses:
+            clauses = [cleaned] if cleaned else []
 
         # Step 4: entities (whole-contract level)
         entities = extract_entities(cleaned)
@@ -91,13 +99,24 @@ async def analyze_contract(file: UploadFile = File(...)):
             "summary": summary,
             "clauses": clause_results
         }
-
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[ERROR] analyze_contract failed: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error analyzing contract: {str(e)}"
+        )
     finally:
         # Clean up — delete the uploaded file after processing
         if os.path.exists(file_path):
             os.remove(file_path)
 
 
+
 # Serve frontend static files
-if os.path.exists("frontend"):
-    app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")
+if os.path.exists("frontend/dist"):
+    app.mount("/", StaticFiles(directory="frontend/dist", html=True), name="frontend")
+elif os.path.exists("frontend"):
+    app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")
+
