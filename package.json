@@ -1,0 +1,16 @@
+{
+  "name": "clauseguard",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev:backend": "uvicorn backend.main:app --reload --port 8000",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "dev": "concurrently -k -p \"[{name}]\" -n \"backend,frontend\" -c \"blue.bold,cyan.bold\" \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "build:frontend": "npm run build --prefix frontend",
+    "start": "uvicorn backend.main:app --port 8000"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
+
