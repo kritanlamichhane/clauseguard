@@ -143,3 +143,38 @@ clauseguard/
 ├── requirements.txt         # Python dependencies
 └── README.md
 ```
+
+---
+
+## ⚠️ Limitations & Legal Disclaimer
+
+> [!IMPORTANT]
+> **Legal Disclaimer:** ClauseGuard is an automated contract auditing assistant created for informational purposes only. It does **not** constitute formal legal advice or substitute for professional legal counsel.
+
+* **Scanned Image PDFs:** ClauseGuard currently parses native text PDFs, DOCX, and TXT files. Image-only/scanned PDFs require pre-processing with an external OCR tool.
+* **Offline Model Fallback:** When offline or without a Gemini API key, executive summaries fall back to local rule-based heuristic summaries.
+
+---
+
+## 🔮 Future Work
+
+- [ ] **Fine-tuned Legal Model:** Fine-tuning transformer models directly on the CUAD (Contract Understanding Atticus Dataset) for specialized legal entity and risk detection.
+- [ ] **Contract Version Comparison:** Multi-document diffing to highlight structural and risk changes between contract revisions.
+- [ ] **Export Options:** One-click export of structured risk reports to PDF and Word (`.docx`) formats.
+- [ ] **Saved Audit History:** User authentication and contract audit archive dashboard.
+
+---
+
+## 📄 License
+
+This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+
+---
+
+## 👏 Acknowledgements
+
+* [spaCy](https://spacy.io/) for Named Entity Recognition and NLP sentence boundary parsing.
+* [Hugging Face Optimum](https://huggingface.co/docs/optimum) & [ONNX Runtime](https://onnxruntime.ai/) for high-performance local embeddings execution (`all-MiniLM-L6-v2`).
+* [Google Gemini API](https://ai.google.dev/) for AI LLM contract reasoning and plain-English summaries.
+* [scikit-learn](https://scikit-learn.org/) for supervised machine learning clause classification.
+* [Lucide Icons](https://lucide.dev/) & [Tailwind CSS](https://tailwindcss.com/) for UI elements and design system styling.
