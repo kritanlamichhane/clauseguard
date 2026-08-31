@@ -1,14 +1,29 @@
 import spacy
 import re
 
-# Load spaCy's English model once (this is the NLP model)
-nlp = spacy.load("en_core_web_sm")
+nlp = None
+
+def get_nlp():
+    global nlp
+    if nlp is None:
+        try:
+            nlp = spacy.load("en_core_web_sm")
+        except Exception as e:
+            print(f"[WARNING] segmenter.py: spaCy model 'en_core_web_sm' could not be loaded: {e}")
+            nlp = False
+    return nlp if nlp is not False else None
 
 def split_into_sentences(text):
-    """Use spaCy to split text into linguistically correct sentences"""
-    doc = nlp(text)
-    sentences = [sent.text.strip() for sent in doc.sents if sent.text.strip()]
-    return sentences
+    """Use spaCy to split text into linguistically correct sentences, with regex fallback"""
+    nlp_model = get_nlp()
+    if nlp_model:
+        doc = nlp_model(text)
+        return [sent.text.strip() for sent in doc.sents if sent.text.strip()]
+    
+    # Fallback if spaCy model is not installed/loaded
+    raw_sents = re.split(r'(?<=[.!?])\s+', text)
+    return [s.strip() for s in raw_sents if s.strip()]
+
 
 def detect_numbered_clauses(text):
     """

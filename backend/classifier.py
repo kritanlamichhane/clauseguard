@@ -45,9 +45,15 @@ def train_classifier():
 
 def load_classifier():
     """Loads the saved model — use this in production instead of retraining"""
-    model = joblib.load(MODEL_PATH)
-    vectorizer = joblib.load(VECTORIZER_PATH)
-    return model, vectorizer
+    if not os.path.exists(MODEL_PATH) or not os.path.exists(VECTORIZER_PATH):
+        return None, None
+    try:
+        model = joblib.load(MODEL_PATH)
+        vectorizer = joblib.load(VECTORIZER_PATH)
+        return model, vectorizer
+    except Exception as e:
+        print(f"[WARNING] classifier.py: Could not load trained classifier: {e}")
+        return None, None
 
 
 def predict_clause_type(clause_text, model=None, vectorizer=None):
@@ -55,8 +61,14 @@ def predict_clause_type(clause_text, model=None, vectorizer=None):
     if model is None or vectorizer is None:
         model, vectorizer = load_classifier()
 
-    vec = vectorizer.transform([clause_text])
-    prediction = model.predict(vec)[0]
-    confidence = max(model.predict_proba(vec)[0])
+    if model is None or vectorizer is None:
+        return {"clause_type": "General", "confidence": 0.0}
 
-    return {"clause_type": prediction, "confidence": round(float(confidence), 2)}
+    try:
+        vec = vectorizer.transform([clause_text])
+        prediction = model.predict(vec)[0]
+        confidence = max(model.predict_proba(vec)[0])
+        return {"clause_type": prediction, "confidence": round(float(confidence), 2)}
+    except Exception as e:
+        print(f"[WARNING] classifier.py: Prediction failed: {e}")
+        return {"clause_type": "General", "confidence": 0.0}

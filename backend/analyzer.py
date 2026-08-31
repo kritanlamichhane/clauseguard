@@ -11,8 +11,18 @@ from typing import List
 # Load environment variables
 load_dotenv()
 
-# Initialize the modern SDK client (Automatically reads GEMINI_API_KEY from .env)
-client = genai.Client()
+_client = None
+
+def get_client():
+    global _client
+    if _client is None:
+        try:
+            _client = genai.Client()
+        except Exception as e:
+            print(f"[WARNING] analyzer.py: Could not initialize Gemini client: {e}")
+            _client = False
+    return _client if _client is not False else None
+
 
 
 # Define the schemas for batch contract risk assessment
@@ -25,7 +35,9 @@ class SingleClauseAssessment(BaseModel):
 
 class ContractBatchAnalysis(BaseModel):
     assessments: List[SingleClauseAssessment]
-    summary: str = Field(description="A 2-3 sentence plain-English summary of the overall risk level of this contract and what the user should pay most attention to before signing")
+    summary: str = Field(description="A 2-3 sentence plain-English summary of the " \
+                                    "overall risk level of this contract and what the user" \
+                                    " should pay most attention to before signing")
 
 
 def generate_contract_summary(all_clause_results):
@@ -91,6 +103,10 @@ Also, write a 2-3 sentence overall plain-English summary of the contract's risks
     summary = ""
 
     try:
+        client = get_client()
+        if not client:
+            raise RuntimeError("Gemini SDK client unavailable or GEMINI_API_KEY missing.")
+
         response = client.models.generate_content(
             model='gemini-2.5-flash',
             contents=prompt,
@@ -100,6 +116,7 @@ Also, write a 2-3 sentence overall plain-English summary of the contract's risks
                 temperature=0.1,
             ),
         )
+
         
         # Parse the JSON response
         data = json.loads(response.text)

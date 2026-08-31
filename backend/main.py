@@ -17,13 +17,14 @@ from backend.scorer import calculate_risk_score, count_risk_levels, get_risk_lab
 
 app = FastAPI(title="ClauseGuard API")
 
-# Allow the frontend (running on a different port) to call this API
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -98,14 +99,5 @@ async def analyze_contract(file: UploadFile = File(...)):
 
 
 # Serve frontend static files
-app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")
-
-from fastapi.middleware.cors import CORSMiddleware
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+if os.path.exists("frontend"):
+    app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")
