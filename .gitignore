@@ -23,3 +23,9 @@ frontend/node_modules/
 uploads/*
 !uploads/.gitkeep
 *.log
+
+# SQLite Database files
+*.db
+*.sqlite
+*.sqlite3
+data/*.db
