@@ -89,4 +89,3 @@ RISK_PATTERNS = [
         "You may be required to cover the other party's legal costs or damages in certain situations."
     ),
 ]
-

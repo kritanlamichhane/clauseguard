@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 
 # ── Authentication Models ──────────────────────────────────────────────────────
@@ -29,7 +29,20 @@ class TokenResponse(BaseModel):
 
 # ── Analysis & Report Models ───────────────────────────────────────────────────
 
-# A single clause extracted from the contract
+class RuleMatch(BaseModel):
+    rule_id: str
+    risk_type: str
+    risk_level: str
+    pattern_matched: str
+
+
+class SimilarityMatch(BaseModel):
+    risk_type: str
+    risk_level: str
+    similarity_score: float
+    matched_reference: str
+
+
 class Clause(BaseModel):
     id: Optional[int] = None
     clause_text: str
@@ -42,7 +55,6 @@ class Clause(BaseModel):
     similarity_match: Optional[Dict[str, Any]] = None
 
 
-# Named entities found in the full contract
 class ContractEntities(BaseModel):
     parties: List[str] = []
     dates: List[str] = []
@@ -57,7 +69,6 @@ class RiskBreakdown(BaseModel):
     safe: int = 0
 
 
-# The full risk report for one contract
 class RiskReport(BaseModel):
     file_name: str
     total_clauses: int
@@ -67,9 +78,10 @@ class RiskReport(BaseModel):
     entities: ContractEntities
     summary: str
     clauses: List[Clause]
+    history_id: Optional[int] = None
 
 
-# ── History Summary & Detail Models ────────────────────────────────────────────
+# ── History Models ─────────────────────────────────────────────────────────────
 
 class HistorySummaryItem(BaseModel):
     id: int

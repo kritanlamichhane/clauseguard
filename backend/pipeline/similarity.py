@@ -5,9 +5,8 @@ import torch
 from optimum.onnxruntime import ORTModelForFeatureExtraction
 from transformers import AutoTokenizer
 
-from backend.constants import RISKY_REFERENCE_CLAUSES
-
-MODEL_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "onnx_model")
+from backend.core.config import MODEL_DIR
+from backend.pipeline.constants import RISKY_REFERENCE_CLAUSES
 
 tokenizer = None
 model = None
@@ -42,7 +41,6 @@ def get_embeddings_batch(texts: List[str]) -> Optional[np.ndarray]:
         embeddings = sum_embeddings / sum_mask
         embeddings_np = embeddings.cpu().numpy()
 
-        # Vectorized L2 normalization across rows: unit vectors for fast dot-product cosine similarity
         norms = np.linalg.norm(embeddings_np, axis=1, keepdims=True)
         norms = np.where(norms == 0, 1e-9, norms)
         return embeddings_np / norms
@@ -74,7 +72,6 @@ def cos_similarity(v1: np.ndarray, v2: np.ndarray) -> float:
 def load_onnx_model() -> bool:
     """
     Loads the ONNX embedding model and pre-computes the reference embeddings matrix.
-    The reference matrix is computed once at initialization and kept in memory as a normalized (N, D) matrix.
     """
     global tokenizer, model, reference_matrix, onnx_loaded
     if onnx_loaded is not None:
@@ -89,7 +86,6 @@ def load_onnx_model() -> bool:
         tokenizer = AutoTokenizer.from_pretrained(MODEL_DIR)
         model = ORTModelForFeatureExtraction.from_pretrained(MODEL_DIR)
 
-        # Pre-compute and L2-normalize all reference clause embeddings into a single (N, D) matrix
         reference_texts = [item[0] for item in RISKY_REFERENCE_CLAUSES]
         reference_matrix = get_embeddings_batch(reference_texts)
 
@@ -104,7 +100,6 @@ def load_onnx_model() -> bool:
 def find_similar_risky_clause(clause_text: str, threshold: float = 0.55) -> Optional[Dict[str, Any]]:
     """
     Compares a single clause against all known risky reference clauses using vectorized matrix multiplication.
-    Computes scores = reference_matrix (N, D) . clause_vec (D,) in a single BLAS dot product.
     """
     if not load_onnx_model() or reference_matrix is None:
         return None
@@ -113,7 +108,6 @@ def find_similar_risky_clause(clause_text: str, threshold: float = 0.55) -> Opti
     if clause_vec is None:
         return None
 
-    # Vectorized cosine similarity against all references simultaneously
     scores = np.dot(reference_matrix, clause_vec)
     best_idx = int(np.argmax(scores))
     best_score = float(scores[best_idx])
@@ -132,7 +126,7 @@ def find_similar_risky_clause(clause_text: str, threshold: float = 0.55) -> Opti
 def find_similar_for_all_clauses(clauses: List[str], threshold: float = 0.55) -> List[Dict[str, Any]]:
     """
     Batch comparison: embeds all input clauses in a single ONNX pass and computes
-    the similarity matrix (M, D) x (D, N) -> (M, N) via matrix multiplication.
+    pairwise matrix similarities.
     """
     if not clauses:
         return []
@@ -144,7 +138,6 @@ def find_similar_for_all_clauses(clauses: List[str], threshold: float = 0.55) ->
     if clause_embs is None:
         return [{"clause_text": c, "similarity_match": None} for c in clauses]
 
-    # Full batch matrix multiplication: (M, D) x (D, N) -> (M, N)
     similarity_matrix = np.dot(clause_embs, reference_matrix.T)
     best_indices = np.argmax(similarity_matrix, axis=1)
     best_scores = np.max(similarity_matrix, axis=1)

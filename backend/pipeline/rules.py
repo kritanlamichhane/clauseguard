@@ -1,8 +1,9 @@
 import re
-from backend.constants import RISK_PATTERNS
+from typing import List, Dict, Any
+from backend.pipeline.constants import RISK_PATTERNS
 
 
-def flag_clause(clause_text):
+def flag_clause(clause_text: str) -> List[Dict[str, Any]]:
     """
     Checks a single clause against all known risk patterns.
     Returns a list of matches found (can be multiple per clause).
@@ -21,7 +22,7 @@ def flag_clause(clause_text):
     return matches
 
 
-def flag_all_clauses(clauses):
+def flag_all_clauses(clauses: List[str]) -> List[Dict[str, Any]]:
     """
     Runs flag_clause on a whole list of clauses.
     Returns a list of dicts: {clause_text, matches}

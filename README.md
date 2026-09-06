@@ -146,27 +146,43 @@ Open **`http://localhost:3000`** in your browser.
 
 ---
 
-##  Project Structure
+## 📂 Project Structure
 
 ```
 clauseguard/
 │
 ├── backend/
-│   ├── main.py              # FastAPI server — routes, auth, history & static serving
-│   ├── database.py          # SQLite database schema & CRUD helpers (users, history)
-│   ├── auth.py              # Password hashing & JWT token verification
-│   ├── models.py            # Pydantic data schemas for auth, history & reports
-│   ├── extractor.py         # PDF/DOCX/TXT → raw text
-│   ├── cleaner.py           # Smart text normalization
-│   ├── segmenter.py         # Clause boundary detection
-│   ├── ner.py               # Named entity recognition (spaCy)
-│   ├── keywords.py          # TF-IDF + YAKE keyword extraction
-│   ├── rules.py             # Regex-based risk flagging
-│   ├── classifier.py        # ML clause-type classifier
-│   ├── similarity.py        # Semantic similarity search (ONNX Runtime)
-│   ├── analyzer.py          # Gemini API batch risk analysis & local fallbacks
-│   ├── scorer.py            # Weighted risk scoring algorithm (0–100)
-│   └── constants.py         # Reference risk database & regex patterns
+│   ├── main.py              # Slim FastAPI entrypoint (middleware, static serving & router mounting)
+│   ├── __init__.py          # Backend package root
+│   │
+│   ├── api/                 # FastAPI modular route handlers
+│   │   ├── __init__.py      # Router aggregation (api_router)
+│   │   ├── health.py        # Health check router (/health)
+│   │   ├── auth.py          # Authentication router (/auth/register, /auth/login, /auth/me)
+│   │   ├── history.py       # History vault router (/history CRUD)
+│   │   └── analyze.py       # Document upload & full pipeline execution (/analyze)
+│   │
+│   ├── core/                # System foundation & database
+│   │   ├── __init__.py      # Core exports
+│   │   ├── config.py        # Centralized settings & environment paths
+│   │   ├── models.py        # Pydantic schemas (User, History, Clause, RiskReport)
+│   │   ├── database.py      # SQLite connection & CRUD operations
+│   │   ├── security.py      # PBKDF2 password hashing & HMAC-SHA256 JWT tokens
+│   │   └── dependencies.py  # FastAPI auth dependencies (get_current_user, get_optional_user)
+│   │
+│   └── pipeline/            # Multi-stage NLP analysis engine
+│       ├── __init__.py      # Pipeline module exports
+│       ├── constants.py     # Reference risk clauses database & regex risk patterns
+│       ├── extractor.py     # PDF, DOCX, and TXT raw text extraction
+│       ├── cleaner.py       # Smart text cleaning, whitespace & line-repair
+│       ├── segmenter.py     # Clause & sentence segmentation
+│       ├── ner.py           # Named entity recognition (spaCy)
+│       ├── keywords.py      # TF-IDF & YAKE keyword extraction
+│       ├── rules.py         # Pattern library for predatory clause detection
+│       ├── classifier.py    # Supervised ML clause-type classification (11 categories)
+│       ├── similarity.py    # Pre-computed matrix similarity with ONNX embeddings
+│       ├── analyzer.py      # LLM reasoning & heuristic fallback generator
+│       └── scorer.py        # Weighted risk calculation & severity grading
 │
 ├── frontend/                # Vite + React 18 + Tailwind CSS SPA
 │   ├── src/
@@ -189,12 +205,14 @@ clauseguard/
 │
 ├── data/
 │   ├── clauseguard.db       # Persistent SQLite database (auto-created)
+│   ├── onnx_model/          # ONNX Runtime model for all-MiniLM-L6-v2
 │   └── training_data/       # Labeled clause classification training dataset
 │
-├── tests/                   # Pytest test suite (21 unit & integration tests)
+├── tests/                   # Pytest test suite (22 unit & integration tests)
 │   ├── test_auth_history.py # User auth, JWT, isolation & persistence tests
 │   ├── test_api.py          # API endpoint tests
-│   └── ...                  # Pipeline component tests
+│   ├── test_similarity.py   # Vectorized similarity & batch comparison tests
+│   └── ...                  # Pipeline component unit tests
 │
 ├── package.json             # Root package script for concurrent dev runner
 ├── requirements.txt         # Python dependencies

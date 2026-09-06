@@ -1,4 +1,3 @@
-import os
 import hmac
 import hashlib
 import base64
@@ -6,11 +5,7 @@ import json
 import secrets
 import time
 from typing import Optional, Dict, Any
-from fastapi import Header, HTTPException, Depends, status
-from backend.database import get_user_by_id
-
-SECRET_KEY = os.getenv("SECRET_KEY", "clauseguard-super-secret-jwt-key-2026-secure-auth")
-TOKEN_EXPIRATION_SECONDS = 60 * 60 * 24 * 7  # 7 days
+from backend.core.config import SECRET_KEY, TOKEN_EXPIRATION_SECONDS
 
 
 # ── Password Hashing (PBKDF2-HMAC-SHA256) ──────────────────────────────────────
@@ -44,7 +39,7 @@ def _base64url_decode(data: str) -> bytes:
 
 
 def create_access_token(user_id: int, email: str, username: str) -> str:
-    """Creates a signed JWT token containing user details with an expiration timestamp."""
+    """Creates a signed JWT token containing user claims with an expiration timestamp."""
     header = {"alg": "HS256", "typ": "JWT"}
     payload = {
         "sub": str(user_id),
@@ -84,57 +79,8 @@ def decode_access_token(token: str) -> Optional[Dict[str, Any]]:
         payload = json.loads(payload_bytes.decode('utf-8'))
 
         if payload.get("exp", 0) < int(time.time()):
-            return None  # Token expired
+            return None  # Expired
 
         return payload
-    except Exception:
-        return None
-
-
-# ── FastAPI Dependencies ───────────────────────────────────────────────────────
-
-def get_current_user(authorization: Optional[str] = Header(None)) -> Dict[str, Any]:
-    """Dependency that requires a valid JWT token in the Authorization header."""
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication token required. Please sign in.",
-            headers={"WWW-Authenticate": "Bearer"}
-        )
-
-    token = authorization[7:].strip()
-    payload = decode_access_token(token)
-    if not payload:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired session. Please sign in again.",
-            headers={"WWW-Authenticate": "Bearer"}
-        )
-
-    user_id = int(payload["sub"])
-    user = get_user_by_id(user_id)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User account not found.",
-            headers={"WWW-Authenticate": "Bearer"}
-        )
-
-    return user
-
-
-def get_optional_user(authorization: Optional[str] = Header(None)) -> Optional[Dict[str, Any]]:
-    """Dependency that returns the user if a valid Bearer token is provided, otherwise None."""
-    if not authorization or not authorization.startswith("Bearer "):
-        return None
-
-    token = authorization[7:].strip()
-    payload = decode_access_token(token)
-    if not payload:
-        return None
-
-    try:
-        user_id = int(payload["sub"])
-        return get_user_by_id(user_id)
     except Exception:
         return None

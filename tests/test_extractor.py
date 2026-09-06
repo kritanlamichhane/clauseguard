@@ -2,7 +2,7 @@ import sys
 sys.path.append(".")
 
 import os
-from backend.extractor import extract_text
+from backend.pipeline.extractor import extract_text
 
 def test_pdf_extraction():
     pdf_path = "tests/sample_contract.pdf"

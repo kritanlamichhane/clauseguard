@@ -1,4 +1,4 @@
-from backend.classifier import predict_clause_type
+from backend.pipeline.classifier import predict_clause_type
 
 def test_predict_clause_type():
     clause = "Either party may terminate this agreement upon 30 days written notice."

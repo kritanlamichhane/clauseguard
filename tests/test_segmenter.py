@@ -1,4 +1,4 @@
-from backend.segmenter import segment_into_clauses, detect_numbered_clauses, split_into_sentences
+from backend.pipeline.segmenter import segment_into_clauses, detect_numbered_clauses, split_into_sentences
 
 def test_detect_numbered_clauses():
     text = "1. Payment Terms. Payment is due in 30 days.\n2. Termination. Vendor may terminate anytime."

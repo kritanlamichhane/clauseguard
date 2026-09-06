@@ -1,4 +1,4 @@
-from backend.cleaner import clean_text, normalize_quotes, remove_extra_whitespace
+from backend.pipeline.cleaner import clean_text, normalize_quotes, remove_extra_whitespace
 
 def test_normalize_quotes():
     raw = '\u201cSmart quotes\u201d and \u2018single quotes\u2019'

@@ -13,7 +13,7 @@ def get_nlp():
             nlp = False
     return nlp if nlp is not False else None
 
-def split_into_sentences(text):
+def split_into_sentences(text: str):
     """Use spaCy to split text into linguistically correct sentences, with regex fallback"""
     nlp_model = get_nlp()
     if nlp_model:
@@ -25,28 +25,16 @@ def split_into_sentences(text):
     return [s.strip() for s in raw_sents if s.strip()]
 
 
-def detect_numbered_clauses(text):
+def detect_numbered_clauses(text: str):
     """
-    Many contracts use numbered clauses like:
-    1. Payment Terms...
-    2. Termination...
-    Or markdown headings like:
-    ## 1. Payment Terms...
-    This regex finds those boundaries and segments the text while preserving the headers.
+    Finds section boundaries and segments text preserving headers (e.g. 1. Services, ## 1. Services).
     """
-    # Matches patterns like:
-    # 1. Services
-    # ## 1. Services
-    # Section 1. Services
-    # Article 1. Services
     pattern = r'(?:\n|^)\s*(?:##\s*|Section\s+|Article\s+)?(\d+\.\s+)'
-    
     matches = list(re.finditer(pattern, text))
     if not matches:
         return []
         
     clauses = []
-    # If there is text before the first clause, keep it as the first item (preamble)
     first_span_start = matches[0].start()
     preamble = text[:first_span_start].strip()
     if preamble:
@@ -54,7 +42,6 @@ def detect_numbered_clauses(text):
         
     for i in range(len(matches)):
         start = matches[i].start()
-        # Adjust start if it matched leading newline
         match_str = matches[i].group(0)
         if match_str.startswith('\n'):
             start += 1
@@ -66,17 +53,13 @@ def detect_numbered_clauses(text):
             
     return clauses
 
-def segment_into_clauses(text):
+def segment_into_clauses(text: str):
     """
     Main function — tries numbered clause detection first.
     Falls back to sentence-level splitting if no numbering found.
     """
     numbered = detect_numbered_clauses(text)
-
     if len(numbered) > 1:
-        # Numbered clauses found — but each one might have multiple sentences
-        # We keep them as-is since they're already meaningful units
         return numbered
     else:
-        # No numbering — fall back to sentence splitting
         return split_into_sentences(text)

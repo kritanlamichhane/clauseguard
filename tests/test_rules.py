@@ -1,4 +1,4 @@
-from backend.rules import flag_clause, flag_all_clauses
+from backend.pipeline.rules import flag_clause, flag_all_clauses
 
 def test_flag_clause_indemnification():
     clause = "Contractor agrees to indemnify and hold harmless the Company from any claims."

@@ -1,4 +1,4 @@
-from backend.analyzer import analyze_contract_batch, generate_contract_summary
+from backend.pipeline.analyzer import analyze_contract_batch, generate_contract_summary
 
 def test_analyze_contract_batch():
     processed_clauses = [

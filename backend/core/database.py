@@ -1,19 +1,15 @@
 import sqlite3
-import os
 import json
-from datetime import datetime
 from typing import Optional, List, Dict, Any
-
-DB_DIR = "data"
-DB_PATH = os.path.join(DB_DIR, "clauseguard.db")
+from backend.core.config import DB_PATH, DATA_DIR
 
 
 def get_db_connection() -> sqlite3.Connection:
     """Creates and returns a connection to the SQLite database with row_factory set to Row."""
-    os.makedirs(DB_DIR, exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
+    conn.execute("PRAGMA journal_mode = WAL")
     return conn
 
 
@@ -51,7 +47,7 @@ def init_db():
     )
     """)
 
-    # Create index for fast user history lookup
+    # Fast index for user history queries
     cursor.execute("""
     CREATE INDEX IF NOT EXISTS idx_history_user_id ON analysis_history (user_id)
     """)

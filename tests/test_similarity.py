@@ -1,4 +1,4 @@
-from backend.similarity import (
+from backend.pipeline.similarity import (
     find_similar_risky_clause,
     find_similar_for_all_clauses,
     cos_similarity,

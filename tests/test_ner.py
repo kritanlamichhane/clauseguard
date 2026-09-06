@@ -1,4 +1,4 @@
-from backend.ner import extract_entities
+from backend.pipeline.ner import extract_entities
 
 def test_extract_entities_structure():
     text = "Agreement between ACME Corp and John Doe on January 1st, 2024 for $5,000 in California."

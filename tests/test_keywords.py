@@ -1,10 +1,10 @@
 import sys
 sys.path.append(".")
 
-from backend.extractor import extract_text
-from backend.cleaner import clean_text
-from backend.segmenter import segment_into_clauses
-from backend.keywords import extract_keywords_tfidf, extract_keywords_yake
+from backend.pipeline.extractor import extract_text
+from backend.pipeline.cleaner import clean_text
+from backend.pipeline.segmenter import segment_into_clauses
+from backend.pipeline.keywords import extract_keywords_tfidf, extract_keywords_yake
 
 raw = extract_text("tests/sample_contract.pdf")
 cleaned = clean_text(raw)
