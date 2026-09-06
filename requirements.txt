@@ -14,23 +14,16 @@ python-dotenv
 pdfplumber                # PDF text extraction
 python-docx               # DOCX text extraction
 
-# ── Classic NLP ────────────────────────────────────────────────────────────────
-spacy                     # NER + sentence boundary detection (run: python -m spacy download en_core_web_sm)
+# ── Classic NLP & ML ───────────────────────────────────────────────────────────
+spacy                     # NER + sentence boundary detection
 yake                      # Single-document keyword extraction
-
-# ── ML / Vectorization ────────────────────────────────────────────────────────
 scikit-learn              # TF-IDF vectorizer + Logistic Regression classifier
 pandas                    # CSV loading for training data
 numpy                     # Array operations & vectorized matrix dot products
 joblib                    # Model serialization
 
-# ── Semantic Embeddings (Optimized with ONNX Runtime) ─────────────────────────
-optimum[onnxruntime]      # ONNX model execution
-transformers              # Tokenizer and architecture loader
-torch                     # Required backend tensor library
-
 # ── Google Gemini LLM ─────────────────────────────────────────────────────────
-google-genai              # Modern Gemini SDK (replaces google-generativeai)
+google-genai              # Modern Gemini SDK
 pydantic                  # Structured JSON schema for Gemini responses
 
 # ── Testing ───────────────────────────────────────────────────────────────────
