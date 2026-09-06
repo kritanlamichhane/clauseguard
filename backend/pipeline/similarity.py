@@ -1,16 +1,13 @@
 import os
 from typing import Optional, List, Dict, Any
 import numpy as np
-import torch
-from optimum.onnxruntime import ORTModelForFeatureExtraction
-from transformers import AutoTokenizer
 
 from backend.core.config import MODEL_DIR
 from backend.pipeline.constants import RISKY_REFERENCE_CLAUSES
 
 tokenizer = None
 model = None
-reference_matrix: Optional[np.ndarray] = None  # Shape: (N, D) pre-computed unit vectors
+reference_matrix: Optional[np.ndarray] = None
 onnx_loaded = None
 
 
@@ -19,10 +16,12 @@ def get_embeddings_batch(texts: List[str]) -> Optional[np.ndarray]:
     Computes mean-pooled, L2-normalized embeddings for a batch of strings using ONNX runtime.
     Returns a 2D numpy array of shape (len(texts), embedding_dim) where each row is a unit vector.
     """
+    global tokenizer, model
     if tokenizer is None or model is None or not texts:
         return None
 
     try:
+        import torch
         inputs = tokenizer(
             texts,
             padding=True,
@@ -71,7 +70,8 @@ def cos_similarity(v1: np.ndarray, v2: np.ndarray) -> float:
 
 def load_onnx_model() -> bool:
     """
-    Loads the ONNX embedding model and pre-computes the reference embeddings matrix.
+    Lazily loads the ONNX embedding model and pre-computes the reference embeddings matrix.
+    Avoids importing torch/optimum at module initialization time.
     """
     global tokenizer, model, reference_matrix, onnx_loaded
     if onnx_loaded is not None:
@@ -79,9 +79,11 @@ def load_onnx_model() -> bool:
 
     try:
         if not os.path.exists(MODEL_DIR):
-            print(f"[WARNING] similarity.py: ONNX model directory '{MODEL_DIR}' does not exist.")
             onnx_loaded = False
             return False
+
+        from transformers import AutoTokenizer
+        from optimum.onnxruntime import ORTModelForFeatureExtraction
 
         tokenizer = AutoTokenizer.from_pretrained(MODEL_DIR)
         model = ORTModelForFeatureExtraction.from_pretrained(MODEL_DIR)
@@ -92,7 +94,7 @@ def load_onnx_model() -> bool:
         onnx_loaded = reference_matrix is not None
         return onnx_loaded
     except Exception as e:
-        print(f"[WARNING] similarity.py: Failed to load ONNX model from '{MODEL_DIR}': {e}")
+        print(f"[INFO] similarity.py: ONNX model disabled or failed to load ({e}). Using rule/LLM pipeline.")
         onnx_loaded = False
         return False
 
