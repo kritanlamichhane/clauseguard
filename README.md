@@ -23,7 +23,7 @@ ClauseGuard runs every clause through a multi-stage NLP pipeline — combining r
 - **Smart Clause Segmentation** — Detects numbered sections and markdown headers (`## 1. Services`).
 - **Rule-Based Risk Flagging** — Pattern library detecting critical legal liabilities and unfair obligations.
 - **ML Clause-Type Classification** — Logistic Regression + TF-IDF classifier across 11 standard contract clause categories.
-- **ONNX-Optimized Semantic Similarity Search** — Sentence embedding matching (`all-MiniLM-L6-v2`) against known predatory clause patterns.
+- **Vectorized Pre-Computed Semantic Similarity** — Sentence embedding matching (`all-MiniLM-L6-v2` via ONNX Runtime) using pre-computed, L2-normalized NumPy matrix dot products for sub-millisecond predatory clause detection.
 - **LLM-Powered Contract Reasoning** — Google Gemini API with intelligent local NLP fallbacks.
 - **Overall Weighted Risk Score (0–100)** — Comprehensive severity score and breakdown by risk levels (High, Medium, Low, Safe).
 
@@ -48,7 +48,7 @@ rules.py         → rule-based risk flagging (regex pattern library)
         ↓
 classifier.py    → ML clause-type classification (TF-IDF + Logistic Regression, 11 categories)
         ↓
-similarity.py    → semantic similarity search against known risky clauses (ONNX all-MiniLM-L6-v2 + cosine similarity)
+similarity.py    → vectorized matrix semantic similarity search (ONNX all-MiniLM-L6-v2 + BLAS dot products)
         ↓
 analyzer.py      → batch risk analysis: Gemini API (with NLP fallback on quota exceeded)
         ↓

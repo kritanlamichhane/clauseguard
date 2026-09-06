@@ -21,14 +21,13 @@ yake                      # Single-document keyword extraction
 # ── ML / Vectorization ────────────────────────────────────────────────────────
 scikit-learn              # TF-IDF vectorizer + Logistic Regression classifier
 pandas                    # CSV loading for training data
-numpy                     # Array operations
+numpy                     # Array operations & vectorized matrix dot products
 joblib                    # Model serialization
 
 # ── Semantic Embeddings (Optimized with ONNX Runtime) ─────────────────────────
 optimum[onnxruntime]      # ONNX model execution
 transformers              # Tokenizer and architecture loader
 torch                     # Required backend tensor library
-# sentence-transformers   # (Replaced by ONNX for faster startup/inference)
 
 # ── Google Gemini LLM ─────────────────────────────────────────────────────────
 google-genai              # Modern Gemini SDK (replaces google-generativeai)
@@ -36,3 +35,4 @@ pydantic                  # Structured JSON schema for Gemini responses
 
 # ── Testing ───────────────────────────────────────────────────────────────────
 pytest
+httpx                     # Required for FastAPI TestClient integration testing
