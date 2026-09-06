@@ -1,6 +1,5 @@
 # ClauseGuard — Python Dependencies
 # Install with: pip install -r requirements.txt
-# Then run: python -m spacy download en_core_web_sm
 
 # ── Web Framework ──────────────────────────────────────────────────────────────
 fastapi
@@ -16,6 +15,7 @@ python-docx               # DOCX text extraction
 
 # ── Classic NLP & ML ───────────────────────────────────────────────────────────
 spacy                     # NER + sentence boundary detection
+https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl
 yake                      # Single-document keyword extraction
 scikit-learn              # TF-IDF vectorizer + Logistic Regression classifier
 pandas                    # CSV loading for training data
