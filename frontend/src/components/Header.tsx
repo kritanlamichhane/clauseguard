@@ -12,6 +12,7 @@ import {
   FileText
 } from 'lucide-react';
 import { User } from '../types';
+import { API_BASE_URL } from '../config';
 
 interface HeaderProps {
   user: User | null;
@@ -33,7 +34,7 @@ export const Header: React.FC<HeaderProps> = ({
   useEffect(() => {
     const checkHealth = async () => {
       try {
-        const res = await fetch('/health');
+        const res = await fetch(`${API_BASE_URL}/health`);
         if (res.ok) {
           setApiOnline(true);
         } else {

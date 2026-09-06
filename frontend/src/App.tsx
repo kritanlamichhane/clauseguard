@@ -12,6 +12,7 @@ import { AuthModal } from './components/AuthModal';
 import { HistoryView } from './components/HistoryView';
 import { AnalysisResponse, ClauseResult, User } from './types';
 import { AlertTriangle, RefreshCw, FileText, Printer, Sparkles, Clock } from 'lucide-react';
+import { API_BASE_URL } from './config';
 
 const STORAGE_TOKEN_KEY = 'clauseguard_auth_token';
 const STORAGE_USER_KEY = 'clauseguard_auth_user';
@@ -46,7 +47,7 @@ export const App: React.FC = () => {
   // Verify auth token on initial load
   useEffect(() => {
     if (token) {
-      fetch('/auth/me', {
+      fetch(`${API_BASE_URL}/auth/me`, {
         headers: { Authorization: `Bearer ${token}` },
       })
         .then((res) => {
@@ -94,7 +95,7 @@ export const App: React.FC = () => {
     }
 
     try {
-      const response = await fetch('/analyze', {
+      const response = await fetch(`${API_BASE_URL}/analyze`, {
         method: 'POST',
         headers,
         body: formData,

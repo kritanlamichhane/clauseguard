@@ -14,6 +14,7 @@ import {
   FolderOpen
 } from 'lucide-react';
 import { HistoryItem, AnalysisResponse } from '../types';
+import { API_BASE_URL } from '../config';
 
 interface HistoryViewProps {
   token: string | null;
@@ -39,7 +40,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
     setIsLoading(true);
     setError(null);
     try {
-      const res = await fetch('/history', {
+      const res = await fetch(`${API_BASE_URL}/history`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -69,7 +70,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
 
     setDeletingId(id);
     try {
-      const res = await fetch(`/history/${id}`, {
+      const res = await fetch(`${API_BASE_URL}/history/${id}`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -90,7 +91,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
     if (!token) return;
     setViewingId(id);
     try {
-      const res = await fetch(`/history/${id}`, {
+      const res = await fetch(`${API_BASE_URL}/history/${id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

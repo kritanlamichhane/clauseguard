@@ -146,7 +146,7 @@ Open **`http://localhost:3000`** in your browser.
 
 ---
 
-## 📂 Project Structure
+##  Project Structure
 
 ```
 clauseguard/
@@ -243,7 +243,6 @@ pytest tests/
 
 ##  Future Work
 
-- [x] **Saved Audit History & User Authentication:** Multi-user accounts with permanent contract audit archiving.
 - [ ] **Fine-tuned Legal Model:** Fine-tuning transformer models directly on the CUAD (Contract Understanding Atticus Dataset) for specialized legal entity and risk detection.
 - [ ] **Contract Version Comparison:** Multi-document diffing to highlight structural and risk changes between contract revisions.
 - [ ] **Export Options:** One-click export of structured risk reports to PDF and Word (`.docx`) formats.
