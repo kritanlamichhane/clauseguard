@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { FileUploader } from './components/FileUploader';
 import { AnalysisProgress } from './components/AnalysisProgress';
@@ -8,19 +8,77 @@ import { EntityPills } from './components/EntityPills';
 import { ClauseFilter } from './components/ClauseFilter';
 import { ClauseCard } from './components/ClauseCard';
 import { ClauseDetailDrawer } from './components/ClauseDetailDrawer';
-import { AnalysisResponse, ClauseResult } from './types';
-import { AlertTriangle, RefreshCw, FileText, Printer, Sparkles } from 'lucide-react';
+import { AuthModal } from './components/AuthModal';
+import { HistoryView } from './components/HistoryView';
+import { AnalysisResponse, ClauseResult, User } from './types';
+import { AlertTriangle, RefreshCw, FileText, Printer, Sparkles, Clock } from 'lucide-react';
+
+const STORAGE_TOKEN_KEY = 'clauseguard_auth_token';
+const STORAGE_USER_KEY = 'clauseguard_auth_user';
 
 export const App: React.FC = () => {
+  // Authentication State
+  const [token, setToken] = useState<string | null>(() => localStorage.getItem(STORAGE_TOKEN_KEY));
+  const [user, setUser] = useState<User | null>(() => {
+    const saved = localStorage.getItem(STORAGE_USER_KEY);
+    try {
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
+
+  // View Mode: 'audit' (uploader), 'history' (past docs), 'report' (active analysis report)
+  const [currentView, setCurrentView] = useState<'audit' | 'history' | 'report'>('audit');
+
+  // Audit State
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [analysisData, setAnalysisData] = useState<AnalysisResponse | null>(null);
 
-  // Filters & Modal state
+  // Filters & Drawer state
   const [activeFilter, setActiveFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedClause, setSelectedClause] = useState<ClauseResult | null>(null);
+
+  // Verify auth token on initial load
+  useEffect(() => {
+    if (token) {
+      fetch('/auth/me', {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((res) => {
+          if (!res.ok) throw new Error('Session expired');
+          return res.json();
+        })
+        .then((userData: User) => {
+          setUser(userData);
+          localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(userData));
+        })
+        .catch(() => {
+          handleLogout();
+        });
+    }
+  }, []);
+
+  const handleAuthSuccess = (newToken: string, newUser: User) => {
+    setToken(newToken);
+    setUser(newUser);
+    localStorage.setItem(STORAGE_TOKEN_KEY, newToken);
+    localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(newUser));
+  };
+
+  const handleLogout = () => {
+    setToken(null);
+    setUser(null);
+    localStorage.removeItem(STORAGE_TOKEN_KEY);
+    localStorage.removeItem(STORAGE_USER_KEY);
+    if (currentView === 'history') {
+      setCurrentView('audit');
+    }
+  };
 
   const handleFileSelect = async (selectedFile: File) => {
     setFile(selectedFile);
@@ -30,9 +88,15 @@ export const App: React.FC = () => {
     const formData = new FormData();
     formData.append('file', selectedFile);
 
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
     try {
       const response = await fetch('/analyze', {
         method: 'POST',
+        headers,
         body: formData,
       });
 
@@ -43,6 +107,7 @@ export const App: React.FC = () => {
 
       const data: AnalysisResponse = await response.json();
       setAnalysisData(data);
+      setCurrentView('report');
     } catch (err: any) {
       console.error('[ClauseGuard Error]', err);
       setError(err.message || 'Failed to analyze contract. Please ensure the backend API is running.');
@@ -58,6 +123,23 @@ export const App: React.FC = () => {
     setActiveFilter('all');
     setSearchQuery('');
     setSelectedClause(null);
+    setCurrentView('audit');
+  };
+
+  const handleSelectHistoryReport = (historyReport: AnalysisResponse) => {
+    setAnalysisData(historyReport);
+    setActiveFilter('all');
+    setSearchQuery('');
+    setSelectedClause(null);
+    setCurrentView('report');
+  };
+
+  const handleNavigate = (view: 'audit' | 'history') => {
+    if (view === 'history' && !user) {
+      setIsAuthModalOpen(true);
+      return;
+    }
+    setCurrentView(view);
   };
 
   const handlePrint = () => {
@@ -87,11 +169,27 @@ export const App: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background text-gray-100 font-sans selection:bg-primary-500 selection:text-white">
       {/* Header */}
-      <Header />
+      <Header
+        user={user}
+        currentView={currentView}
+        onNavigate={handleNavigate}
+        onOpenAuth={() => setIsAuthModalOpen(true)}
+        onLogout={handleLogout}
+      />
 
-      {/* Main Content */}
+      {/* Main Content Viewport */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8">
-        {!analysisData && !isLoading && (
+        {/* VIEW 1: Document History View */}
+        {currentView === 'history' && (
+          <HistoryView
+            token={token}
+            onSelectHistoryItem={handleSelectHistoryReport}
+            onNewAudit={handleReset}
+          />
+        )}
+
+        {/* VIEW 2: New Audit / Uploader View */}
+        {currentView === 'audit' && !isLoading && (
           <section className="space-y-8 animate-fade-in">
             {/* Hero Banner */}
             <div className="text-center space-y-4 max-w-3xl mx-auto">
@@ -108,6 +206,19 @@ export const App: React.FC = () => {
               <p className="text-base text-gray-400 max-w-2xl mx-auto">
                 Upload any PDF or DOCX contract. ClauseGuard segments clauses, runs ML classification, extracts entities, and delivers plain-English risk advice.
               </p>
+
+              {!user && (
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsAuthModalOpen(true)}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-surface-subtle hover:bg-surface-hover border border-surface-border text-xs text-gray-300 font-medium transition-colors"
+                  >
+                    <Clock className="w-3.5 h-3.5 text-primary-400" />
+                    <span>Sign in to save and review past document audits</span>
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* File Uploader */}
@@ -139,8 +250,8 @@ export const App: React.FC = () => {
           </section>
         )}
 
-        {/* Analysis Results Dashboard */}
-        {analysisData && (
+        {/* VIEW 3: Analysis Results Dashboard */}
+        {currentView === 'report' && analysisData && !isLoading && (
           <section className="space-y-8 animate-fade-in">
             {/* Top Dashboard Actions */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 border-b border-surface-border pb-6">
@@ -151,10 +262,24 @@ export const App: React.FC = () => {
                 </h2>
                 <p className="text-xs text-gray-400 font-mono mt-1">
                   File: {analysisData.file_name} • {analysisData.total_clauses} Clauses Analyzed
+                  {analysisData.history_id && (
+                    <span className="ml-2 inline-flex items-center gap-1 text-emerald-400">
+                      • Saved to History (# {analysisData.history_id})
+                    </span>
+                  )}
                 </p>
               </div>
 
               <div className="flex items-center gap-3">
+                {user && (
+                  <button
+                    onClick={() => setCurrentView('history')}
+                    className="px-4 py-2.5 rounded-xl bg-surface-subtle hover:bg-surface-hover border border-surface-border text-xs font-semibold text-gray-300 flex items-center gap-2 transition-colors min-h-[44px]"
+                  >
+                    <Clock className="w-4 h-4" />
+                    <span>View History</span>
+                  </button>
+                )}
                 <button
                   onClick={handlePrint}
                   className="px-4 py-2.5 rounded-xl bg-surface-subtle hover:bg-surface-hover border border-surface-border text-xs font-semibold text-gray-300 flex items-center gap-2 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px]"
@@ -243,6 +368,13 @@ export const App: React.FC = () => {
           <p className="font-mono text-[11px]">Powered by PyTorch, ONNX Runtime & Google Gemini</p>
         </div>
       </footer>
+
+      {/* Authentication Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onAuthSuccess={handleAuthSuccess}
+      />
     </div>
   );
 };
