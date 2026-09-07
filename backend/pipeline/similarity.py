@@ -1,59 +1,22 @@
-import os
 from typing import Optional, List, Dict, Any
 import numpy as np
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 
-from backend.core.config import MODEL_DIR
 from backend.pipeline.constants import RISKY_REFERENCE_CLAUSES
 
-tokenizer = None
-model = None
-reference_matrix: Optional[np.ndarray] = None
-onnx_loaded = None
+_vectorizer: Optional[TfidfVectorizer] = None
+_reference_matrix = None
 
 
-def get_embeddings_batch(texts: List[str]) -> Optional[np.ndarray]:
-    """
-    Computes mean-pooled, L2-normalized embeddings for a batch of strings using ONNX runtime.
-    Returns a 2D numpy array of shape (len(texts), embedding_dim) where each row is a unit vector.
-    """
-    global tokenizer, model
-    if tokenizer is None or model is None or not texts:
-        return None
-
-    try:
-        import torch
-        inputs = tokenizer(
-            texts,
-            padding=True,
-            truncation=True,
-            max_length=512,
-            return_tensors="pt"
-        )
-        with torch.no_grad():
-            outputs = model(**inputs)
-
-        token_embeddings = outputs.last_hidden_state
-        attention_mask = inputs['attention_mask']
-        input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
-        sum_embeddings = torch.sum(token_embeddings * input_mask_expanded, 1)
-        sum_mask = torch.clamp(input_mask_expanded.sum(1), min=1e-9)
-        embeddings = sum_embeddings / sum_mask
-        embeddings_np = embeddings.cpu().numpy()
-
-        norms = np.linalg.norm(embeddings_np, axis=1, keepdims=True)
-        norms = np.where(norms == 0, 1e-9, norms)
-        return embeddings_np / norms
-    except Exception as e:
-        print(f"[WARN] similarity.py: Error generating embeddings: {e}")
-        return None
-
-
-def get_embedding(text: str) -> Optional[np.ndarray]:
-    """Helper to compute a single normalized 1D embedding array of shape (embedding_dim,)."""
-    batch = get_embeddings_batch([text])
-    if batch is not None and len(batch) > 0:
-        return batch[0]
-    return None
+def _get_vectorizer_and_matrix():
+    """Initializes a lightweight TF-IDF vectorizer and reference similarity matrix."""
+    global _vectorizer, _reference_matrix
+    if _vectorizer is None:
+        ref_texts = [item[0] for item in RISKY_REFERENCE_CLAUSES]
+        _vectorizer = TfidfVectorizer(ngram_range=(1, 3), sublinear_tf=True)
+        _reference_matrix = _vectorizer.fit_transform(ref_texts)
+    return _vectorizer, _reference_matrix
 
 
 def cos_similarity(v1: np.ndarray, v2: np.ndarray) -> float:
@@ -68,96 +31,88 @@ def cos_similarity(v1: np.ndarray, v2: np.ndarray) -> float:
     return float(dot_prod / (norm_v1 * norm_v2))
 
 
-def load_onnx_model() -> bool:
-    """
-    Lazily loads the ONNX embedding model and pre-computes the reference embeddings matrix.
-    Avoids importing torch/optimum at module initialization time.
-    """
-    global tokenizer, model, reference_matrix, onnx_loaded
-    if onnx_loaded is not None:
-        return onnx_loaded
-
+def get_embeddings_batch(texts: List[str]) -> Optional[np.ndarray]:
+    """Computes normalized TF-IDF vector arrays for batch of strings."""
+    if not texts:
+        return None
     try:
-        if not os.path.exists(MODEL_DIR):
-            onnx_loaded = False
-            return False
-
-        from transformers import AutoTokenizer
-        from optimum.onnxruntime import ORTModelForFeatureExtraction
-
-        tokenizer = AutoTokenizer.from_pretrained(MODEL_DIR)
-        model = ORTModelForFeatureExtraction.from_pretrained(MODEL_DIR)
-
-        reference_texts = [item[0] for item in RISKY_REFERENCE_CLAUSES]
-        reference_matrix = get_embeddings_batch(reference_texts)
-
-        onnx_loaded = reference_matrix is not None
-        return onnx_loaded
+        vectorizer, _ = _get_vectorizer_and_matrix()
+        matrix = vectorizer.transform(texts)
+        return matrix.toarray()
     except Exception as e:
-        print(f"[INFO] similarity.py: ONNX model disabled or failed to load ({e}). Using rule/LLM pipeline.")
-        onnx_loaded = False
-        return False
-
-
-def find_similar_risky_clause(clause_text: str, threshold: float = 0.55) -> Optional[Dict[str, Any]]:
-    """
-    Compares a single clause against all known risky reference clauses using vectorized matrix multiplication.
-    """
-    if not load_onnx_model() or reference_matrix is None:
+        print(f"[WARN] similarity.py: Error generating vector representations: {e}")
         return None
 
-    clause_vec = get_embedding(clause_text)
-    if clause_vec is None:
-        return None
 
-    scores = np.dot(reference_matrix, clause_vec)
-    best_idx = int(np.argmax(scores))
-    best_score = float(scores[best_idx])
-
-    if best_score >= threshold:
-        matched_text, risk_type, risk_level = RISKY_REFERENCE_CLAUSES[best_idx]
-        return {
-            "risk_type": risk_type,
-            "risk_level": risk_level,
-            "similarity_score": round(best_score, 2),
-            "matched_reference": matched_text
-        }
+def get_embedding(text: str) -> Optional[np.ndarray]:
+    """Helper to compute a single 1D vector representation."""
+    batch = get_embeddings_batch([text])
+    if batch is not None and len(batch) > 0:
+        return batch[0]
     return None
 
 
-def find_similar_for_all_clauses(clauses: List[str], threshold: float = 0.55) -> List[Dict[str, Any]]:
+def find_similar_risky_clause(clause_text: str, threshold: float = 0.45) -> Optional[Dict[str, Any]]:
     """
-    Batch comparison: embeds all input clauses in a single ONNX pass and computes
-    pairwise matrix similarities.
+    Compares a single clause against all known risky reference clauses using
+    high-speed TF-IDF n-gram cosine similarity (zero memory overhead).
+    """
+    if not clause_text or not clause_text.strip():
+        return None
+
+    try:
+        vectorizer, ref_matrix = _get_vectorizer_and_matrix()
+        clause_vec = vectorizer.transform([clause_text])
+        sims = cosine_similarity(clause_vec, ref_matrix)[0]
+
+        best_idx = int(np.argmax(sims))
+        best_score = float(sims[best_idx])
+
+        if best_score >= threshold:
+            matched_text, risk_type, risk_level = RISKY_REFERENCE_CLAUSES[best_idx]
+            return {
+                "risk_type": risk_type,
+                "risk_level": risk_level,
+                "similarity_score": round(best_score, 2),
+                "matched_reference": matched_text
+            }
+    except Exception as e:
+        print(f"[WARN] similarity.py: Error in find_similar_risky_clause: {e}")
+
+    return None
+
+
+def find_similar_for_all_clauses(clauses: List[str], threshold: float = 0.45) -> List[Dict[str, Any]]:
+    """
+    Batch comparison: compares all clauses against risky reference clauses in one matrix multiply.
     """
     if not clauses:
         return []
 
-    if not load_onnx_model() or reference_matrix is None:
+    try:
+        vectorizer, ref_matrix = _get_vectorizer_and_matrix()
+        clause_matrix = vectorizer.transform(clauses)
+        sim_matrix = cosine_similarity(clause_matrix, ref_matrix)
+
+        best_indices = np.argmax(sim_matrix, axis=1)
+        best_scores = np.max(sim_matrix, axis=1)
+
+        results = []
+        for i, clause in enumerate(clauses):
+            score = float(best_scores[i])
+            idx = int(best_indices[i])
+            if score >= threshold:
+                matched_text, risk_type, risk_level = RISKY_REFERENCE_CLAUSES[idx]
+                match = {
+                    "risk_type": risk_type,
+                    "risk_level": risk_level,
+                    "similarity_score": round(score, 2),
+                    "matched_reference": matched_text
+                }
+            else:
+                match = None
+            results.append({"clause_text": clause, "similarity_match": match})
+        return results
+    except Exception as e:
+        print(f"[WARN] similarity.py: Error in batch similarity: {e}")
         return [{"clause_text": c, "similarity_match": None} for c in clauses]
-
-    clause_embs = get_embeddings_batch(clauses)
-    if clause_embs is None:
-        return [{"clause_text": c, "similarity_match": None} for c in clauses]
-
-    similarity_matrix = np.dot(clause_embs, reference_matrix.T)
-    best_indices = np.argmax(similarity_matrix, axis=1)
-    best_scores = np.max(similarity_matrix, axis=1)
-
-    results = []
-    for i, clause in enumerate(clauses):
-        score = float(best_scores[i])
-        idx = int(best_indices[i])
-        if score >= threshold:
-            matched_text, risk_type, risk_level = RISKY_REFERENCE_CLAUSES[idx]
-            match = {
-                "risk_type": risk_type,
-                "risk_level": risk_level,
-                "similarity_score": round(score, 2),
-                "matched_reference": matched_text
-            }
-        else:
-            match = None
-        results.append({"clause_text": clause, "similarity_match": match})
-
-    return results

@@ -1,6 +1,5 @@
 import re
 from typing import Dict, List
-import spacy
 
 nlp = None
 
@@ -9,19 +8,15 @@ def get_nlp():
     global nlp
     if nlp is None:
         try:
+            import spacy
             nlp = spacy.load("en_core_web_sm")
-        except Exception:
-            try:
-                import spacy.cli
-                spacy.cli.download("en_core_web_sm")
-                nlp = spacy.load("en_core_web_sm")
-            except Exception as e:
-                print(f"[WARNING] ner.py: spaCy model 'en_core_web_sm' could not be loaded: {e}")
-                nlp = False
+        except Exception as e:
+            # Do NOT run spacy.cli.download inside server request handler
+            nlp = False
     return nlp if nlp is not False else None
 
 
-# Map spaCy's entity labels to our own simpler categories
+# Map spaCy's entity labels to simpler categories
 LABEL_MAP = {
     "PERSON": "parties",
     "ORG": "parties",
@@ -40,6 +35,9 @@ def _extract_fallback_entities(text: str) -> Dict[str, List[str]]:
         "amounts": [],
         "locations": []
     }
+
+    if not text:
+        return entities
 
     # Extract dates
     date_patterns = [
@@ -104,7 +102,7 @@ def extract_entities(text: str) -> Dict[str, List[str]]:
         return _extract_fallback_entities(text)
 
     try:
-        doc = nlp_model(text[:100000])  # limit max characters to prevent timeout
+        doc = nlp_model(text[:50000])  # limit max characters to keep latency instant
 
         for ent in doc.ents:
             category = LABEL_MAP.get(ent.label_)
@@ -113,7 +111,7 @@ def extract_entities(text: str) -> Dict[str, List[str]]:
                 if cleaned_ent and cleaned_ent not in entities[category]:
                     entities[category].append(cleaned_ent)
 
-        # If spaCy missed obvious amounts/dates, supplement with regex
+        # Supplement with regex for any missed amounts/dates
         fallback = _extract_fallback_entities(text)
         for key in ["amounts", "dates"]:
             for item in fallback[key]:
@@ -122,5 +120,5 @@ def extract_entities(text: str) -> Dict[str, List[str]]:
 
         return entities
     except Exception as e:
-        print(f"[WARNING] ner.py: Exception during spaCy parsing: {e}")
+        print(f"[WARN] ner.py: spaCy parsing fallback: {e}")
         return _extract_fallback_entities(text)
