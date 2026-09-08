@@ -13,6 +13,7 @@ import { HistoryView } from './components/HistoryView';
 import { AnalysisResponse, ClauseResult, User } from './types';
 import { AlertTriangle, RefreshCw, FileText, Printer, Sparkles, Clock } from 'lucide-react';
 import { API_BASE_URL } from './config';
+import { wakeBackend } from './keepAlive';
 
 const STORAGE_TOKEN_KEY = 'clauseguard_auth_token';
 const STORAGE_USER_KEY = 'clauseguard_auth_user';
@@ -33,6 +34,9 @@ export const App: React.FC = () => {
   // View Mode: 'audit' (uploader), 'history' (past docs), 'report' (active analysis report)
   const [currentView, setCurrentView] = useState<'audit' | 'history' | 'report'>('audit');
 
+  // Backend wake-up status for Render free-tier cold starts
+  const [backendStatus, setBackendStatus] = useState<'unknown' | 'waking' | 'ready'>('unknown');
+
   // Audit State
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -43,6 +47,16 @@ export const App: React.FC = () => {
   const [activeFilter, setActiveFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedClause, setSelectedClause] = useState<ClauseResult | null>(null);
+
+  // Wake the backend on page load (handles Render free-tier spin-down)
+  useEffect(() => {
+    const cancel = wakeBackend({
+      onWaking: () => setBackendStatus('waking'),
+      onReady:  () => setBackendStatus('ready'),
+      onFailed: () => setBackendStatus('ready'), // stop showing banner on timeout
+    });
+    return cancel;
+  }, []);
 
   // Verify auth token on initial load
   useEffect(() => {
@@ -177,6 +191,41 @@ export const App: React.FC = () => {
         onOpenAuth={() => setIsAuthModalOpen(true)}
         onLogout={handleLogout}
       />
+
+      {/* Backend warm-up banner (Render free-tier cold-start notice) */}
+      {backendStatus === 'waking' && (
+        <div
+          role="status"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            padding: '10px 16px',
+            background: 'rgba(234, 179, 8, 0.12)',
+            borderBottom: '1px solid rgba(234, 179, 8, 0.25)',
+            color: '#fbbf24',
+            fontSize: '13px',
+            fontWeight: 500,
+          }}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{ flexShrink: 0, animation: 'spin 1.2s linear infinite' }}
+          >
+            <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+          </svg>
+          Backend is warming up — this takes ~30 seconds on the free tier. Please wait…
+        </div>
+      )}
 
       {/* Main Content Viewport */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8">

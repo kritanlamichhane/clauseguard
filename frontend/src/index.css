@@ -67,3 +67,18 @@
 .animate-glow {
   animation: glow-pulse 3s infinite ease-in-out;
 }
+
+/* Spinner for backend wake-up banner */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Fade-in for view transitions */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.35s ease-out forwards;
+}
