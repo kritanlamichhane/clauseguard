@@ -4,6 +4,7 @@ from google.genai import types
 from pydantic import BaseModel, Field
 from typing import List, Tuple, Dict, Any
 from backend.core.config import GEMINI_API_KEY
+from backend.core.rate_limiter import gemini_rate_limiter, RateLimitExceeded
 
 _client = None
 
@@ -98,15 +99,19 @@ Also, write a 2-3 sentence overall plain-English summary of the contract's risks
         if not client:
             raise RuntimeError("Gemini SDK client unavailable or GEMINI_API_KEY missing.")
 
-        response = client.models.generate_content(
-            model='gemini-2.0-flash',
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
-                response_schema=ContractBatchAnalysis,
-                temperature=0.1,
-            ),
-        )
+        # Estimate tokens: ~1 token per 4 chars of input + 1024 for output
+        estimated_tokens = len(prompt) // 4 + 1024
+
+        with gemini_rate_limiter.acquire(estimated_tokens=estimated_tokens):
+            response = client.models.generate_content(
+                model='gemini-2.0-flash',
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json",
+                    response_schema=ContractBatchAnalysis,
+                    temperature=0.1,
+                ),
+            )
 
         data = json.loads(response.text)
         assessments = data.get("assessments", [])
@@ -135,6 +140,9 @@ Also, write a 2-3 sentence overall plain-English summary of the contract's risks
                 clause_results[idx]["explanation"] = explanation
                 clause_results[idx]["recommendation"] = recommendation
 
+    except RateLimitExceeded:
+        # Re-raise so the API router can return a proper 429
+        raise
     except Exception as e:
         print(f"[WARN] analyzer.py: LLM Batch analysis fallback: {str(e)}")
         for idx, item in enumerate(processed_clauses_list):

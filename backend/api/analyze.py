@@ -7,6 +7,7 @@ from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 from backend.core.config import UPLOAD_DIR, ALLOWED_EXTENSIONS
 from backend.core.database import save_analysis_history
 from backend.core.dependencies import get_optional_user
+from backend.core.rate_limiter import RateLimitExceeded
 from backend.pipeline import (
     extract_text,
     clean_text,
@@ -112,6 +113,13 @@ async def analyze_contract(
         report_data["history_id"] = history_id
         return report_data
 
+    except RateLimitExceeded as rle:
+        from fastapi.responses import JSONResponse
+        return JSONResponse(
+            status_code=429,
+            content={"detail": str(rle)},
+            headers={"Retry-After": str(int(rle.retry_after_seconds))},
+        )
     except HTTPException:
         raise
     except Exception as e:

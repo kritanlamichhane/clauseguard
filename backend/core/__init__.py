@@ -45,3 +45,9 @@ from backend.core.dependencies import (
     get_current_user,
     get_optional_user
 )
+
+from backend.core.rate_limiter import (
+    gemini_rate_limiter,
+    RateLimitExceeded,
+    SlidingWindowRateLimiter,
+)
